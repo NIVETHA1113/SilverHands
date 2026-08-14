@@ -8,6 +8,11 @@ import LandingPage from './pages/LandingPage';
 import RegisterPage from './pages/RegisterPage';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
+import OnboardingPage from './pages/OnboardingPage';
+import ServicesListPage from './pages/provider/ServicesListPage';
+import ServiceFormPage from './pages/provider/ServiceFormPage';
+import ProductsListPage from './pages/provider/ProductsListPage';
+import ProductFormPage from './pages/provider/ProductFormPage';
 
 export default function App() {
   return (
@@ -28,6 +33,67 @@ export default function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/onboarding"
+                element={
+                  <ProtectedRoute>
+                    <OnboardingPage />
+                  </ProtectedRoute>
+                }
+              />
+              
+              {/* Provider Services Management Routes */}
+              <Route
+                path="/provider/services"
+                element={
+                  <ProtectedRoute>
+                    <ServicesListPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/provider/services/new"
+                element={
+                  <ProtectedRoute>
+                    <ServiceFormPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/provider/services/:id/edit"
+                element={
+                  <ProtectedRoute>
+                    <ServiceFormPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Provider Products Management Routes */}
+              <Route
+                path="/provider/products"
+                element={
+                  <ProtectedRoute>
+                    <ProductsListPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/provider/products/new"
+                element={
+                  <ProtectedRoute>
+                    <ProductFormPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/provider/products/:id/edit"
+                element={
+                  <ProtectedRoute>
+                    <ProductFormPage />
+                  </ProtectedRoute>
+                }
+              />
+
               <Route path="*" element={<LandingPage />} />
             </Routes>
           </main>

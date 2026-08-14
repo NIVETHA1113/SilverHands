@@ -5,7 +5,7 @@ const skillSchema = new mongoose.Schema({
   name: { type: String, required: true },
   category: { type: String, default: 'General' },
   experienceYears: { type: Number, default: 0 },
-  proficiency: { type: String, default: 'Intermediate' } // Beginner, Intermediate, Expert
+  proficiency: { type: String, default: 'Experienced' } // Beginner, Intermediate, Experienced, Expert
 }, { _id: false });
 
 const userSchema = new mongoose.Schema({
@@ -60,14 +60,27 @@ const userSchema = new mongoose.Schema({
     longitude: { type: Number, default: 80.2707 },
     address: { type: String, default: 'T. Nagar, Chennai' }
   },
+  workPreferences: {
+    type: [String],
+    default: ['Home-based']
+  },
+  interestedIn: {
+    type: [String],
+    default: ['Services', 'Flexible Work']
+  },
   availability: {
     days: { type: [String], default: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'] },
+    timePreferences: { type: [String], default: ['Flexible'] },
     preferredTime: { type: String, default: 'Flexible' },
     workPreference: { type: String, default: 'Home-based' }
   },
   verification: {
     phoneVerified: { type: Boolean, default: true },
     profileVerified: { type: Boolean, default: true }
+  },
+  onboarding: {
+    completed: { type: Boolean, default: false },
+    currentStep: { type: Number, default: 1 }
   },
   rating: {
     type: Number,

@@ -1,11 +1,44 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { ShieldCheck, Star, Sparkles, MapPin, Search, Utensils, Scissors, BookOpen, Gift, Sprout } from 'lucide-react';
-
+import { calculateProfileCompletion } from '../utils/profileUtils';
+import api from '../services/api';
+import { ShieldCheck, Star, Sparkles, MapPin, Search, Utensils, Scissors, BookOpen, Gift, Sprout, ArrowRight, CheckCircle2, Briefcase, Package, Plus } from 'lucide-react';
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const isProvider = user?.role === 'provider';
+
+  const completionPercentage = calculateProfileCompletion(user);
+  const isProfileComplete = completionPercentage === 100 || user?.onboarding?.completed;
+
+  // Services & Products count state
+  const [servicesCount, setServicesCount] = useState(0);
+  const [productsCount, setProductsCount] = useState(0);
+
+  useEffect(() => {
+    if (isProvider && (user?._id || user?.id)) {
+      const pId = user._id || user.id;
+      const fetchCounts = async () => {
+        try {
+          const [sRes, pRes] = await Promise.all([
+            api.get(`/services?providerId=${pId}`),
+            api.get(`/products?providerId=${pId}`)
+          ]);
+          if (sRes.data.success) {
+            setServicesCount(sRes.data.services.filter(s => s.status === 'published').length);
+          }
+          if (pRes.data.success) {
+            setProductsCount(pRes.data.products.filter(p => p.status === 'published').length);
+          }
+        } catch (err) {
+          console.error('[Dashboard Counts Error]:', err.message);
+        }
+      };
+      fetchCounts();
+    }
+  }, [isProvider, user]);
 
   return (
     <div className="min-h-screen bg-[#FBF9F4] py-10 px-4 sm:px-6 lg:px-8">
@@ -30,7 +63,7 @@ export default function DashboardPage() {
               </div>
               <p className="text-slate-600 text-base font-normal">
                 {isProvider
-                  ? 'You have 5 local opportunities matching your traditional expertise.'
+                  ? 'Manage your traditional skill offerings, products, and profile.'
                   : 'Discover trusted traditional services and homemade goods near you.'}
               </p>
               <div className="flex items-center gap-4 text-xs font-semibold text-slate-500 pt-1 flex-wrap">
@@ -48,8 +81,8 @@ export default function DashboardPage() {
           </div>
 
           <div className="bg-[#E6ECE7] px-5 py-3 rounded-2xl border border-[#D2DDD5] text-center md:text-right shrink-0">
-            <span className="text-[11px] uppercase font-bold tracking-wider text-[#C86D51] block">Platform Status</span>
-            <span className="text-sm font-semibold text-[#16382B]">Phase 1 Active</span>
+            <span className="text-[11px] uppercase font-bold tracking-wider text-[#C86D51] block">Profile Completion</span>
+            <span className="font-editorial text-xl font-bold text-[#16382B]">{completionPercentage}%</span>
           </div>
         </div>
 
@@ -58,13 +91,133 @@ export default function DashboardPage() {
           /* PROVIDER DASHBOARD */
           <div className="space-y-8">
             
+            {/* PROFILE COMPLETION CARD */}
+            {!isProfileComplete ? (
+              <div className="bg-[#E6ECE7] p-8 rounded-3xl border border-[#D0DDD4] shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                <div className="space-y-2">
+                  <span className="badge-terracotta uppercase tracking-wider text-xs">Action Required</span>
+                  <h2 className="font-editorial text-2xl sm:text-3xl font-bold text-[#16382B]">
+                    Complete your profile
+                  </h2>
+                  <p className="text-slate-700 text-sm max-w-xl">
+                    Add your traditional skills and experience to start discovering local opportunities and earning income.
+                  </p>
+                  <div className="flex items-center gap-3 pt-1">
+                    <div className="w-48 h-2 bg-white rounded-full overflow-hidden border border-[#CBD8CE]">
+                      <div
+                        className="h-full bg-[#16382B] transition-all duration-500"
+                        style={{ width: `${completionPercentage}%` }}
+                      />
+                    </div>
+                    <span className="text-xs font-bold text-[#16382B]">{completionPercentage}% Completed</span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => navigate('/onboarding')}
+                  className="btn-primary py-3.5 px-7 rounded-xl text-base shadow-sm shrink-0"
+                >
+                  <span>Continue Profile</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            ) : null}
+
+            {/* WHAT WOULD YOU LIKE TO OFFER SECTION */}
+            <div className="space-y-4">
+              <span className="text-xs font-bold text-[#C86D51] tracking-widest uppercase block">
+                Provider Offerings & Listings
+              </span>
+              <h2 className="font-editorial text-3xl font-bold text-[#16382B]">
+                What would you like to offer today?
+              </h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                {/* Offer a Service Card */}
+                <div className="card-editorial bg-white p-7 rounded-3xl border border-[#E2E7E3] space-y-5 shadow-xs flex flex-col justify-between">
+                  <div className="space-y-3">
+                    <div className="w-12 h-12 rounded-2xl bg-[#E6ECE7] text-[#16382B] flex items-center justify-center border border-[#D2DDD5]">
+                      <Briefcase className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="font-editorial text-2xl font-bold text-[#16382B]">
+                        Offer a Service
+                      </h3>
+                      <p className="text-slate-600 text-sm mt-1">
+                        Share your skills, traditional knowledge, tailoring, cooking, or tutoring expertise with local neighbors.
+                      </p>
+                    </div>
+                    <div className="bg-[#FBF9F4] p-3 rounded-xl border border-[#E2E7E3] inline-block">
+                      <span className="text-xs text-slate-500 font-medium">Published Services: </span>
+                      <span className="font-bold text-[#16382B] text-sm">{servicesCount} Active</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 pt-2">
+                    <button
+                      onClick={() => navigate('/provider/services/new')}
+                      className="btn-primary text-sm py-2.5 px-5"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Add Service</span>
+                    </button>
+                    <button
+                      onClick={() => navigate('/provider/services')}
+                      className="btn-secondary text-sm py-2.5 px-4"
+                    >
+                      Manage Services
+                    </button>
+                  </div>
+                </div>
+
+                {/* Sell a Product Card */}
+                <div className="card-editorial bg-white p-7 rounded-3xl border border-[#E2E7E3] space-y-5 shadow-xs flex flex-col justify-between">
+                  <div className="space-y-3">
+                    <div className="w-12 h-12 rounded-2xl bg-[#FDF0EC] text-[#C86D51] flex items-center justify-center border border-[#F8DACE]">
+                      <Package className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="font-editorial text-2xl font-bold text-[#16382B]">
+                        Sell a Product
+                      </h3>
+                      <p className="text-slate-600 text-sm mt-1">
+                        Sell something you make or prepare, such as homemade pickles, traditional snacks, bags, or handicrafts.
+                      </p>
+                    </div>
+                    <div className="bg-[#FBF9F4] p-3 rounded-xl border border-[#E2E7E3] inline-block">
+                      <span className="text-xs text-slate-500 font-medium">Published Products: </span>
+                      <span className="font-bold text-[#16382B] text-sm">{productsCount} Active</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 pt-2">
+                    <button
+                      onClick={() => navigate('/provider/products/new')}
+                      className="btn-primary text-sm py-2.5 px-5 bg-[#C86D51] hover:bg-[#b55e43]"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Add Product</span>
+                    </button>
+                    <button
+                      onClick={() => navigate('/provider/products')}
+                      className="btn-secondary text-sm py-2.5 px-4"
+                    >
+                      Manage Products
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
             {/* Minimal Metric Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
               {[
-                { label: 'Profile Status', value: '80%', sub: 'Ready for skills' },
+                { label: 'Profile Status', value: `${completionPercentage}%`, sub: isProfileComplete ? 'Complete' : 'In Progress' },
                 { label: 'Opportunities', value: '5', sub: 'Matched nearby' },
-                { label: 'Active Services', value: '0', sub: 'Phase 3' },
-                { label: 'Products', value: '0', sub: 'Phase 3' },
+                { label: 'Active Services', value: `${servicesCount}`, sub: 'Published' },
+                { label: 'Active Products', value: `${productsCount}`, sub: 'Published' },
                 { label: 'Pending Requests', value: '0', sub: 'Phase 4' },
                 { label: 'Rating', value: '⭐ 4.8', sub: 'Trusted Status' },
               ].map((m, idx) => (
@@ -74,28 +227,6 @@ export default function DashboardPage() {
                   <p className="text-[11px] text-slate-500 mt-0.5">{m.sub}</p>
                 </div>
               ))}
-            </div>
-
-            {/* Next Feature Banner */}
-            <div className="bg-[#E6ECE7] p-8 rounded-3xl border border-[#D2DDD5] space-y-4">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                <div>
-                  <span className="text-xs font-bold text-[#C86D51] tracking-widest uppercase block mb-1">
-                    Next Step on Your Journey
-                  </span>
-                  <h2 className="font-editorial text-2xl sm:text-3xl font-bold text-[#16382B]">
-                    Share your experience with AI-assisted voice onboarding
-                  </h2>
-                  <p className="text-slate-700 text-sm mt-1 max-w-2xl">
-                    In the next phase, you can simply speak or type naturally about your tailoring, cooking, or teaching background to generate your professional profile.
-                  </p>
-                </div>
-
-                <div className="bg-white px-5 py-3 rounded-2xl border border-[#CBD8CE] text-center shrink-0">
-                  <span className="text-xs uppercase font-bold tracking-wider text-slate-500 block">Upcoming</span>
-                  <span className="font-bold text-[#16382B] text-sm">Phase 2: Skill Profile</span>
-                </div>
-              </div>
             </div>
 
           </div>

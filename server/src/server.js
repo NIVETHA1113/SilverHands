@@ -3,6 +3,10 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+import serviceRoutes from './routes/serviceRoutes.js';
+import productRoutes from './routes/productRoutes.js';
+import aiRoutes from './routes/aiRoutes.js';
 
 dotenv.config();
 
@@ -21,6 +25,10 @@ app.use(express.json());
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/services', serviceRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Health Check Route
 app.get('/api/health', (req, res) => {
