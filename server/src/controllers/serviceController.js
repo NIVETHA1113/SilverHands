@@ -6,6 +6,7 @@ import {
   filterInMemoryListings,
   normalizePagination
 } from '../services/discoveryService.js';
+import { calculateDistance } from '../utils/haversine.js';
 
 // Fallback in-memory map for demo mode if MongoDB is offline
 export const inMemoryServices = new Map();
@@ -27,14 +28,35 @@ export const getServices = async (req, res) => {
       skills,
       availableDays,
       sort = 'newest',
+      userLat,
+      userLon,
+      maxDistance,
       page = 1,
       limit = 20
     } = req.query;
 
     const { pageNum, limitNum, skip } = normalizePagination(page, limit);
+    const parsedUserLat = Number(userLat);
+    const parsedUserLon = Number(userLon);
+    const parsedMaxDistance = Number(maxDistance);
+    const hasValidCoordinates = Number.isFinite(parsedUserLat) && Number.isFinite(parsedUserLon);
+
+    const attachDistance = (item) => {
+      if (!hasValidCoordinates) return item;
+
+      const itemLocation = item?.location || {};
+      const itemLat = Number(itemLocation.latitude ?? itemLocation.lat);
+      const itemLon = Number(itemLocation.longitude ?? itemLocation.lon);
+
+      if (!Number.isFinite(itemLat) || !Number.isFinite(itemLon)) return item;
+
+      const distance = calculateDistance(parsedUserLat, parsedUserLon, itemLat, itemLon);
+      if (distance == null) return item;
+
+      return { ...item, distance };
+    };
 
     if (isDbConnected) {
-      // Build query using discovery service
       const query = buildListingQuery({
         status,
         category,
@@ -48,27 +70,36 @@ export const getServices = async (req, res) => {
         availabilityDays: availableDays ? (Array.isArray(availableDays) ? availableDays : [availableDays]) : null
       });
 
-      // Build sort option
       const sortOption = buildSortOption(sort);
 
-      // Execute query
-      const total = await Service.countDocuments(query);
-      const services = await Service.find(query)
+      let services = await Service.find(query)
         .populate('providerId', 'name profileImage age location rating verification skills languages bio')
         .sort(sortOption)
-        .skip(skip)
-        .limit(limitNum);
+        .lean();
+
+      const servicesWithDistance = services.map(attachDistance);
+      let filteredServices = servicesWithDistance;
+
+      if (hasValidCoordinates && Number.isFinite(parsedMaxDistance)) {
+        filteredServices = filteredServices.filter(item => Number.isFinite(item.distance) && item.distance <= parsedMaxDistance);
+      }
+
+      if (sort === 'distance_asc' && hasValidCoordinates) {
+        filteredServices.sort((a, b) => (a.distance ?? Number.MAX_SAFE_INTEGER) - (b.distance ?? Number.MAX_SAFE_INTEGER));
+      }
+
+      const total = filteredServices.length;
+      const paginated = filteredServices.slice(skip, skip + limitNum);
 
       return res.json({
         success: true,
-        count: services.length,
+        count: paginated.length,
         total,
         page: pageNum,
         pages: Math.ceil(total / limitNum) || 1,
-        services
+        services: paginated
       });
     } else {
-      // Fallback: in-memory filtering
       let list = Array.from(inMemoryServices.values());
 
       list = filterInMemoryListings(list, {
@@ -84,13 +115,25 @@ export const getServices = async (req, res) => {
         availabilityDays: availableDays ? (Array.isArray(availableDays) ? availableDays : [availableDays]) : null
       });
 
-      // Sort
-      if (sort === 'price_asc') list.sort((a, b) => a.price - b.price);
-      else if (sort === 'price_desc') list.sort((a, b) => b.price - a.price);
-      else list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      const enriched = list.map(attachDistance);
+      let sortedList = [...enriched];
 
-      const total = list.length;
-      const paginated = list.slice(skip, skip + limitNum);
+      if (sort === 'distance_asc' && hasValidCoordinates) {
+        sortedList.sort((a, b) => (a.distance ?? Number.MAX_SAFE_INTEGER) - (b.distance ?? Number.MAX_SAFE_INTEGER));
+      } else if (sort === 'price_asc') {
+        sortedList.sort((a, b) => a.price - b.price);
+      } else if (sort === 'price_desc') {
+        sortedList.sort((a, b) => b.price - a.price);
+      } else {
+        sortedList.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      }
+
+      if (hasValidCoordinates && Number.isFinite(parsedMaxDistance)) {
+        sortedList = sortedList.filter(item => Number.isFinite(item.distance) && item.distance <= parsedMaxDistance);
+      }
+
+      const total = sortedList.length;
+      const paginated = sortedList.slice(skip, skip + limitNum);
 
       return res.json({
         success: true,

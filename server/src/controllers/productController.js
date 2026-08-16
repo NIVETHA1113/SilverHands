@@ -6,6 +6,7 @@ import {
   filterInMemoryListings,
   normalizePagination
 } from '../services/discoveryService.js';
+import { calculateDistance } from '../utils/haversine.js';
 
 // Fallback in-memory map for demo mode if MongoDB is offline
 export const inMemoryProducts = new Map();
@@ -25,16 +26,37 @@ export const getProducts = async (req, res) => {
       maxPrice,
       deliveryOption,
       sort = 'newest',
+      userLat,
+      userLon,
+      maxDistance,
       page = 1,
       limit = 20
     } = req.query;
 
     const { pageNum, limitNum, skip } = normalizePagination(page, limit);
+    const parsedUserLat = Number(userLat);
+    const parsedUserLon = Number(userLon);
+    const parsedMaxDistance = Number(maxDistance);
+    const hasValidCoordinates = Number.isFinite(parsedUserLat) && Number.isFinite(parsedUserLon);
+
+    const attachDistance = (item) => {
+      if (!hasValidCoordinates) return item;
+
+      const itemLocation = item?.location || {};
+      const itemLat = Number(itemLocation.latitude ?? itemLocation.lat);
+      const itemLon = Number(itemLocation.longitude ?? itemLocation.lon);
+
+      if (!Number.isFinite(itemLat) || !Number.isFinite(itemLon)) return item;
+
+      const distance = calculateDistance(parsedUserLat, parsedUserLon, itemLat, itemLon);
+      if (distance == null) return item;
+
+      return { ...item, distance };
+    };
 
     if (isDbConnected) {
-      // Build query using discovery service
       const query = buildListingQuery({
-        status: ['published', 'out_of_stock'],  // Products can be out of stock
+        status: ['published', 'out_of_stock'],
         category,
         city,
         minPrice,
@@ -44,27 +66,36 @@ export const getProducts = async (req, res) => {
         deliveryMode: deliveryOption
       });
 
-      // Build sort option
       const sortOption = buildSortOption(sort);
 
-      // Execute query
-      const total = await Product.countDocuments(query);
-      const products = await Product.find(query)
+      let products = await Product.find(query)
         .populate('providerId', 'name profileImage age location rating verification skills languages bio')
         .sort(sortOption)
-        .skip(skip)
-        .limit(limitNum);
+        .lean();
+
+      const productsWithDistance = products.map(attachDistance);
+      let filteredProducts = productsWithDistance;
+
+      if (hasValidCoordinates && Number.isFinite(parsedMaxDistance)) {
+        filteredProducts = filteredProducts.filter(item => Number.isFinite(item.distance) && item.distance <= parsedMaxDistance);
+      }
+
+      if (sort === 'distance_asc' && hasValidCoordinates) {
+        filteredProducts.sort((a, b) => (a.distance ?? Number.MAX_SAFE_INTEGER) - (b.distance ?? Number.MAX_SAFE_INTEGER));
+      }
+
+      const total = filteredProducts.length;
+      const paginated = filteredProducts.slice(skip, skip + limitNum);
 
       return res.json({
         success: true,
-        count: products.length,
+        count: paginated.length,
         total,
         page: pageNum,
         pages: Math.ceil(total / limitNum) || 1,
-        products
+        products: paginated
       });
     } else {
-      // Fallback: in-memory filtering
       let list = Array.from(inMemoryProducts.values());
 
       list = filterInMemoryListings(list, {
@@ -78,13 +109,25 @@ export const getProducts = async (req, res) => {
         deliveryMode: deliveryOption
       });
 
-      // Sort
-      if (sort === 'price_asc') list.sort((a, b) => a.price - b.price);
-      else if (sort === 'price_desc') list.sort((a, b) => b.price - a.price);
-      else list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      const enriched = list.map(attachDistance);
+      let sortedList = [...enriched];
 
-      const total = list.length;
-      const paginated = list.slice(skip, skip + limitNum);
+      if (sort === 'distance_asc' && hasValidCoordinates) {
+        sortedList.sort((a, b) => (a.distance ?? Number.MAX_SAFE_INTEGER) - (b.distance ?? Number.MAX_SAFE_INTEGER));
+      } else if (sort === 'price_asc') {
+        sortedList.sort((a, b) => a.price - b.price);
+      } else if (sort === 'price_desc') {
+        sortedList.sort((a, b) => b.price - a.price);
+      } else {
+        sortedList.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      }
+
+      if (hasValidCoordinates && Number.isFinite(parsedMaxDistance)) {
+        sortedList = sortedList.filter(item => Number.isFinite(item.distance) && item.distance <= parsedMaxDistance);
+      }
+
+      const total = sortedList.length;
+      const paginated = sortedList.slice(skip, skip + limitNum);
 
       return res.json({
         success: true,
