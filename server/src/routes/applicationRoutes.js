@@ -3,7 +3,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { protect } from '../middleware/authMiddleware.js';
+import { protect, authorizeRoles } from '../middleware/authMiddleware.js';
 import {
   getMyApplications,
   acceptApplication,
@@ -42,24 +42,23 @@ const upload = multer({
 
 const router = express.Router();
 
-// Provider: see all their applications
-router.get('/my', protect, getMyApplications);
+// Provider ONLY: view all their submitted applications
+router.get('/my', protect, authorizeRoles('provider'), getMyApplications);
 
-// Get single application details
+// Protected: Get single application details
 router.get('/:id', protect, getApplicationById);
 
-// Customer: accept / reject
-router.patch('/:id/accept', protect, acceptApplication);
-router.patch('/:id/reject', protect, rejectApplication);
+// Customer ONLY: accept / reject applications
+router.patch('/:id/accept', protect, authorizeRoles('customer'), acceptApplication);
+router.patch('/:id/reject', protect, authorizeRoles('customer'), rejectApplication);
 
-// Provider: withdraw
-router.patch('/:id/withdraw', protect, withdrawApplication);
+// Provider ONLY: withdraw application
+router.patch('/:id/withdraw', protect, authorizeRoles('provider'), withdrawApplication);
 
-// Customer: mark completed
-router.patch('/:id/complete', protect, completeApplication);
+// Customer ONLY: mark application completed
+router.patch('/:id/complete', protect, authorizeRoles('customer'), completeApplication);
 
-// Customer: leave a review after completion
-router.post('/:id/review', protect, upload.single('completionImage'), createReview);
-
+// Customer ONLY: leave a review after completion
+router.post('/:id/review', protect, authorizeRoles('customer'), upload.single('completionImage'), createReview);
 
 export default router;

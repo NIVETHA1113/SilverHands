@@ -1,5 +1,5 @@
 import express from 'express';
-import { protect } from '../middleware/authMiddleware.js';
+import { protect, authorizeRoles } from '../middleware/authMiddleware.js';
 import {
   createOpportunity,
   getOpportunities,
@@ -16,19 +16,23 @@ import {
 
 const router = express.Router();
 
-// IMPORTANT: /my must come before /:id to avoid being caught as an id param
-router.get('/my', protect, getMyOpportunities);
+// Customer ONLY: View own created opportunities
+router.get('/my', protect, authorizeRoles('customer'), getMyOpportunities);
 
+// Public browsing
 router.get('/', getOpportunities);
-router.post('/', protect, createOpportunity);
-
 router.get('/:id', getOpportunityById);
-router.put('/:id', protect, updateOpportunity);
-router.patch('/:id/status', protect, updateOpportunityStatus);
-router.delete('/:id', protect, deleteOpportunity);
 
-// Applications on an opportunity
-router.post('/:id/apply', protect, applyToOpportunity);
-router.get('/:id/applications', protect, getApplicationsForOpportunity);
+// Customer ONLY: Create & manage opportunities
+router.post('/', protect, authorizeRoles('customer'), createOpportunity);
+router.put('/:id', protect, authorizeRoles('customer'), updateOpportunity);
+router.patch('/:id/status', protect, authorizeRoles('customer'), updateOpportunityStatus);
+router.delete('/:id', protect, authorizeRoles('customer'), deleteOpportunity);
+
+// Provider ONLY: Apply to an opportunity
+router.post('/:id/apply', protect, authorizeRoles('provider'), applyToOpportunity);
+
+// Customer ONLY: View applications submitted for their opportunity
+router.get('/:id/applications', protect, authorizeRoles('customer'), getApplicationsForOpportunity);
 
 export default router;

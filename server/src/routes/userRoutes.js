@@ -6,7 +6,7 @@ import {
   getPublicProviders,
   getPublicProviderById
 } from '../controllers/userController.js';
-import { protect } from '../middleware/authMiddleware.js';
+import { protect, authorizeRoles } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
@@ -17,6 +17,6 @@ router.get('/providers/:id/public', getPublicProviderById);
 // Protected user profile routes
 router.get('/:id', getUserById);
 router.put('/:id/profile', protect, updateProfile);
-router.put('/:id/onboarding', protect, updateOnboarding);
+router.put('/:id/onboarding', protect, authorizeRoles('provider'), updateOnboarding);
 
 export default router;

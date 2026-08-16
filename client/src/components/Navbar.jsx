@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Sparkles, Menu, X, LogOut, User, Compass, Briefcase, Package, LayoutDashboard, FileText, ClipboardList, CheckCircle2 } from 'lucide-react';
+import { Sparkles, Menu, X, LogOut, Compass, Briefcase, Package, LayoutDashboard, PlusCircle, FileText } from 'lucide-react';
 
 export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -16,6 +16,7 @@ export default function Navbar() {
   };
 
   const isProvider = user?.role === 'provider';
+  const isCustomer = user?.role === 'customer';
 
   return (
     <nav className="bg-white/95 backdrop-blur-md border-b border-[#E2E7E3] sticky top-0 z-40">
@@ -49,9 +50,21 @@ export default function Navbar() {
               <span>Explore</span>
             </Link>
 
+            {/* Opportunities (Shared browse) */}
+            <Link
+              to="/opportunities"
+              className={`flex items-center gap-1.5 transition-colors ${
+                location.pathname === '/opportunities' ? 'text-[#16382B] font-bold' : 'hover:text-[#16382B]'
+              }`}
+            >
+              <FileText className="w-4 h-4" />
+              <span>Opportunities</span>
+            </Link>
+
             {isAuthenticated ? (
               <>
-                {isProvider ? (
+                {/* PROVIDER-ONLY LINKS */}
+                {isProvider && (
                   <>
                     <Link
                       to="/dashboard"
@@ -62,6 +75,7 @@ export default function Navbar() {
                       <LayoutDashboard className="w-4 h-4" />
                       <span>Dashboard</span>
                     </Link>
+
                     <Link
                       to="/provider/services"
                       className={`flex items-center gap-1.5 transition-colors ${
@@ -71,6 +85,7 @@ export default function Navbar() {
                       <Briefcase className="w-4 h-4" />
                       <span>My Services</span>
                     </Link>
+
                     <Link
                       to="/provider/products"
                       className={`flex items-center gap-1.5 transition-colors ${
@@ -80,56 +95,38 @@ export default function Navbar() {
                       <Package className="w-4 h-4" />
                       <span>My Products</span>
                     </Link>
-                    <Link
-                      to="/opportunities"
-                      className={`flex items-center gap-1.5 transition-colors ${
-                        location.pathname.startsWith('/opportunities') ? 'text-[#16382B] font-bold' : 'hover:text-[#16382B]'
-                      }`}
-                    >
-                      <FileText className="w-4 h-4" />
-                      <span>Opportunities</span>
-                    </Link>
+
                     <Link
                       to="/applications/my"
                       className={`flex items-center gap-1.5 transition-colors ${
-                        location.pathname.startsWith('/applications') && location.pathname !== '/applications/accepted' ? 'text-[#16382B] font-bold' : 'hover:text-[#16382B]'
+                        location.pathname === '/applications/my' ? 'text-[#16382B] font-bold' : 'hover:text-[#16382B]'
                       }`}
                     >
-                      <ClipboardList className="w-4 h-4" />
                       <span>My Applications</span>
                     </Link>
-                    <Link
-                      to="/applications/accepted"
-                      className={`flex items-center gap-1.5 transition-colors ${
-                        location.pathname === '/applications/accepted' ? 'text-[#16382B] font-bold' : 'hover:text-[#16382B]'
-                      }`}
-                    >
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>My Accepted Services</span>
-                    </Link>
                   </>
-                ) : (
+                )}
+
+                {/* CUSTOMER-ONLY LINKS */}
+                {isCustomer && (
                   <>
-                    <Link to="/explore?tab=services" className="hover:text-[#16382B]">Services</Link>
-                    <Link to="/explore?tab=products" className="hover:text-[#16382B]">Products</Link>
-                    <Link to="/explore?tab=providers" className="hover:text-[#16382B]">Providers</Link>
                     <Link
-                      to="/opportunities"
-                      className={`flex items-center gap-1.5 transition-colors ${
-                        location.pathname.startsWith('/opportunities') && location.pathname !== '/opportunities/my' ? 'text-[#16382B] font-bold' : 'hover:text-[#16382B]'
+                      to="/opportunities/create"
+                      className={`flex items-center gap-1.5 transition-colors text-[#C86D51] font-bold ${
+                        location.pathname === '/opportunities/create' ? 'underline' : 'hover:underline'
                       }`}
                     >
-                      <FileText className="w-4 h-4" />
-                      <span>Opportunities</span>
+                      <PlusCircle className="w-4 h-4 text-[#C86D51]" />
+                      <span>Post Opportunity</span>
                     </Link>
+
                     <Link
                       to="/opportunities/my"
                       className={`flex items-center gap-1.5 transition-colors ${
                         location.pathname === '/opportunities/my' ? 'text-[#16382B] font-bold' : 'hover:text-[#16382B]'
                       }`}
                     >
-                      <ClipboardList className="w-4 h-4" />
-                      <span>My Posts</span>
+                      <span>My Opportunities</span>
                     </Link>
                   </>
                 )}
@@ -183,13 +180,8 @@ export default function Navbar() {
       {/* MOBILE DROPDOWN MENU */}
       {mobileMenuOpen && (
         <div className="md:hidden bg-white border-b border-[#E2E7E3] px-4 pt-2 pb-6 space-y-3">
-          <Link
-            to="/explore"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block py-2 text-sm font-semibold text-[#16382B]"
-          >
-            🔍 Explore Marketplace
-          </Link>
+          <Link to="/explore" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-[#16382B]">🔍 Explore Marketplace</Link>
+          <Link to="/opportunities" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">Browse Opportunities</Link>
 
           {isAuthenticated ? (
             <>
@@ -198,20 +190,12 @@ export default function Navbar() {
                   <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">Dashboard</Link>
                   <Link to="/provider/services" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">My Services</Link>
                   <Link to="/provider/products" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">My Products</Link>
-                  <Link to="/opportunities" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">Opportunities</Link>
                   <Link to="/applications/my" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">My Applications</Link>
-                  <Link to="/applications/accepted" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">My Accepted Services</Link>
-                  {user?._id && (
-                    <Link to={`/providers/${user._id}`} onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-[#C86D51]">View My Public Profile</Link>
-                  )}
                 </>
               ) : (
                 <>
-                  <Link to="/explore?tab=services" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">Services</Link>
-                  <Link to="/explore?tab=products" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">Products</Link>
-                  <Link to="/explore?tab=providers" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">Providers</Link>
-                  <Link to="/opportunities" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">Opportunities</Link>
-                  <Link to="/opportunities/my" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">My Posts</Link>
+                  <Link to="/opportunities/create" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-[#C86D51]">Post Opportunity</Link>
+                  <Link to="/opportunities/my" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">My Opportunities</Link>
                 </>
               )}
 

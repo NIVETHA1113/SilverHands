@@ -29,6 +29,9 @@ import MyApplicationsPage from './pages/opportunities/MyApplicationsPage';
 import MyAcceptedServicesPage from './pages/opportunities/MyAcceptedServicesPage';
 import ReviewPage from './pages/opportunities/ReviewPage';
 
+// Chatbot Assistant Widget
+import Chatbot from './components/chatbot/Chatbot';
+
 export default function App() {
   return (
     <AuthProvider>
@@ -37,18 +40,20 @@ export default function App() {
           <Navbar />
           <main className="flex-1">
             <Routes>
-              {/* Public Discovery Routes */}
+              {/* Public Discovery & Information Routes */}
               <Route path="/" element={<LandingPage />} />
               <Route path="/explore" element={<ExplorePage />} />
               <Route path="/services/:id" element={<ServiceDetailPage />} />
               <Route path="/products/:id" element={<ProductDetailPage />} />
               <Route path="/providers/:id" element={<PublicProviderProfilePage />} />
+              <Route path="/opportunities" element={<OpportunitiesListPage />} />
+              <Route path="/opportunities/:id" element={<OpportunityDetailPage />} />
 
               {/* Auth Routes */}
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/login" element={<LoginPage />} />
               
-              {/* Protected User & Provider Routes */}
+              {/* Protected Dashboard Route (Shared) */}
               <Route
                 path="/dashboard"
                 element={
@@ -57,20 +62,20 @@ export default function App() {
                   </ProtectedRoute>
                 }
               />
+
+              {/* Provider ONLY Routes */}
               <Route
                 path="/onboarding"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute allowedRoles={['provider']}>
                     <OnboardingPage />
                   </ProtectedRoute>
                 }
               />
-              
-              {/* Provider Services Management Routes */}
               <Route
                 path="/provider/services"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute allowedRoles={['provider']}>
                     <ServicesListPage />
                   </ProtectedRoute>
                 }
@@ -78,7 +83,7 @@ export default function App() {
               <Route
                 path="/provider/services/new"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute allowedRoles={['provider']}>
                     <ServiceFormPage />
                   </ProtectedRoute>
                 }
@@ -86,17 +91,15 @@ export default function App() {
               <Route
                 path="/provider/services/:id/edit"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute allowedRoles={['provider']}>
                     <ServiceFormPage />
                   </ProtectedRoute>
                 }
               />
-
-              {/* Provider Products Management Routes */}
               <Route
                 path="/provider/products"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute allowedRoles={['provider']}>
                     <ProductsListPage />
                   </ProtectedRoute>
                 }
@@ -104,7 +107,7 @@ export default function App() {
               <Route
                 path="/provider/products/new"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute allowedRoles={['provider']}>
                     <ProductFormPage />
                   </ProtectedRoute>
                 }
@@ -112,40 +115,15 @@ export default function App() {
               <Route
                 path="/provider/products/:id/edit"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute allowedRoles={['provider']}>
                     <ProductFormPage />
                   </ProtectedRoute>
                 }
               />
-
-              {/* ── Task 3: Opportunities + Applications + Trust ── */}
-              {/* Public opportunity browsing */}
-              <Route path="/opportunities" element={<OpportunitiesListPage />} />
-              <Route path="/opportunities/:id" element={<OpportunityDetailPage />} />
-
-              {/* Protected: customer creates & manages */}
-              <Route
-                path="/opportunities/create"
-                element={
-                  <ProtectedRoute>
-                    <OpportunityCreatePage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/opportunities/my"
-                element={
-                  <ProtectedRoute>
-                    <MyOpportunitiesPage />
-                  </ProtectedRoute>
-                }
-              />
-
-              {/* Protected: provider tracks own applications */}
               <Route
                 path="/applications/my"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute allowedRoles={['provider']}>
                     <MyApplicationsPage />
                   </ProtectedRoute>
                 }
@@ -153,17 +131,33 @@ export default function App() {
               <Route
                 path="/applications/accepted"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute allowedRoles={['provider']}>
                     <MyAcceptedServicesPage />
                   </ProtectedRoute>
                 }
               />
 
-              {/* Protected: customer leaves review after completion */}
+              {/* Customer ONLY Routes */}
+              <Route
+                path="/opportunities/create"
+                element={
+                  <ProtectedRoute allowedRoles={['customer']}>
+                    <OpportunityCreatePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/opportunities/my"
+                element={
+                  <ProtectedRoute allowedRoles={['customer']}>
+                    <MyOpportunitiesPage />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/applications/:applicationId/review"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute allowedRoles={['customer']}>
                     <ReviewPage />
                   </ProtectedRoute>
                 }
@@ -173,6 +167,9 @@ export default function App() {
             </Routes>
           </main>
           <Footer />
+          
+          {/* Global SilverHands Assistant Floating Chatbot */}
+          <Chatbot />
         </div>
       </Router>
     </AuthProvider>

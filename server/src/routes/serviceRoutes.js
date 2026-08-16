@@ -7,15 +7,17 @@ import {
   updateServiceStatus,
   deleteService
 } from '../controllers/serviceController.js';
-import { protect } from '../middleware/authMiddleware.js';
+import { protect, authorizeRoles } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
 router.get('/', getServices);
 router.get('/:id', getServiceById);
-router.post('/', protect, createService);
-router.put('/:id', protect, updateService);
-router.patch('/:id/status', protect, updateServiceStatus);
-router.delete('/:id', protect, deleteService);
+
+// Provider ONLY routes
+router.post('/', protect, authorizeRoles('provider'), createService);
+router.put('/:id', protect, authorizeRoles('provider'), updateService);
+router.patch('/:id/status', protect, authorizeRoles('provider'), updateServiceStatus);
+router.delete('/:id', protect, authorizeRoles('provider'), deleteService);
 
 export default router;

@@ -7,15 +7,17 @@ import {
   updateProductStatus,
   deleteProduct
 } from '../controllers/productController.js';
-import { protect } from '../middleware/authMiddleware.js';
+import { protect, authorizeRoles } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
 router.get('/', getProducts);
 router.get('/:id', getProductById);
-router.post('/', protect, createProduct);
-router.put('/:id', protect, updateProduct);
-router.patch('/:id/status', protect, updateProductStatus);
-router.delete('/:id', protect, deleteProduct);
+
+// Provider ONLY routes
+router.post('/', protect, authorizeRoles('provider'), createProduct);
+router.put('/:id', protect, authorizeRoles('provider'), updateProduct);
+router.patch('/:id/status', protect, authorizeRoles('provider'), updateProductStatus);
+router.delete('/:id', protect, authorizeRoles('provider'), deleteProduct);
 
 export default router;
