@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { calculateProfileCompletion } from '../utils/profileUtils';
 import api from '../services/api';
-import { ShieldCheck, Star, Sparkles, MapPin, Search, Utensils, Scissors, BookOpen, Gift, Sprout, ArrowRight, CheckCircle2, Briefcase, Package, Plus } from 'lucide-react';
+import { ShieldCheck, Star, Sparkles, MapPin, Search, Utensils, Scissors, BookOpen, Gift, Sprout, ArrowRight, CheckCircle2, Briefcase, Package, Plus, Eye, Compass, UserCheck } from 'lucide-react';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -16,6 +16,7 @@ export default function DashboardPage() {
   // Services & Products count state
   const [servicesCount, setServicesCount] = useState(0);
   const [productsCount, setProductsCount] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     if (isProvider && (user?._id || user?.id)) {
@@ -39,6 +40,15 @@ export default function DashboardPage() {
       fetchCounts();
     }
   }, [isProvider, user]);
+
+  const handleCustomerSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/explore?q=${encodeURIComponent(searchQuery.trim())}`);
+    } else {
+      navigate('/explore');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#FBF9F4] py-10 px-4 sm:px-6 lg:px-8">
@@ -211,6 +221,49 @@ export default function DashboardPage() {
               </div>
             </div>
 
+            {/* SEE HOW YOUR OFFERINGS LOOK TO CUSTOMERS SECTION */}
+            <div className="bg-white p-8 rounded-3xl border border-[#E2E7E3] shadow-xs space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#E6ECE7] text-[#16382B] flex items-center justify-center">
+                  <Eye className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-editorial text-2xl font-bold text-[#16382B]">
+                    See how your offerings look to customers
+                  </h3>
+                  <p className="text-slate-600 text-sm">
+                    Preview your published services, products, and public profile exactly as local customers see them.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-3 pt-2">
+                <button
+                  onClick={() => navigate('/explore?tab=services')}
+                  className="btn-secondary text-xs py-2.5 px-4 bg-white"
+                >
+                  <Briefcase className="w-4 h-4 text-[#16382B]" />
+                  <span>View My Services</span>
+                </button>
+                <button
+                  onClick={() => navigate('/explore?tab=products')}
+                  className="btn-secondary text-xs py-2.5 px-4 bg-white"
+                >
+                  <Package className="w-4 h-4 text-[#C86D51]" />
+                  <span>View My Products</span>
+                </button>
+                {user?._id && (
+                  <button
+                    onClick={() => navigate(`/providers/${user._id}`)}
+                    className="btn-primary text-xs py-2.5 px-5"
+                  >
+                    <UserCheck className="w-4 h-4" />
+                    <span>View Public Profile</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
             {/* Minimal Metric Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
               {[
@@ -218,7 +271,7 @@ export default function DashboardPage() {
                 { label: 'Opportunities', value: '5', sub: 'Matched nearby' },
                 { label: 'Active Services', value: `${servicesCount}`, sub: 'Published' },
                 { label: 'Active Products', value: `${productsCount}`, sub: 'Published' },
-                { label: 'Pending Requests', value: '0', sub: 'Phase 4' },
+                { label: 'Pending Requests', value: '0', sub: 'Phase 5' },
                 { label: 'Rating', value: '⭐ 4.8', sub: 'Trusted Status' },
               ].map((m, idx) => (
                 <div key={idx} className="bg-white p-5 rounded-2xl border border-[#E2E7E3] text-center shadow-2xs">
@@ -237,49 +290,59 @@ export default function DashboardPage() {
             {/* Search Prompt Box */}
             <div className="bg-white p-8 rounded-3xl border border-[#E2E7E3] space-y-4">
               <h2 className="font-editorial text-2xl sm:text-3xl font-bold text-[#16382B]">
-                What service are you looking for today?
+                What service or product are you looking for today?
               </h2>
               <p className="text-slate-600 text-base">
                 Find trusted home cooks, language tutors, blouse tailors, and handmade crafts in {user?.location?.city || 'Chennai'}.
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <form onSubmit={handleCustomerSearch} className="flex flex-col sm:flex-row gap-3 pt-2">
                 <div className="relative flex-1">
                   <Search className="w-5 h-5 text-slate-400 absolute left-4 top-4" />
                   <input
                     type="text"
-                    disabled
                     placeholder="Search traditional skills, tutors, or homemade goods..."
-                    className="input-editorial pl-12 cursor-not-allowed opacity-75"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="input-editorial pl-12"
                   />
                 </div>
                 <button
-                  disabled
-                  className="btn-primary py-3.5 px-6 opacity-60 cursor-not-allowed text-sm"
+                  type="submit"
+                  className="btn-primary py-3.5 px-6 text-sm"
                 >
                   <Search className="w-4 h-4" />
-                  <span>Search</span>
+                  <span>Search Marketplace</span>
                 </button>
-              </div>
+              </form>
             </div>
 
             {/* Popular Service Categories */}
             <div className="bg-[#E6ECE7]/60 p-6 rounded-3xl border border-[#D2DDD5]">
-              <h3 className="font-editorial text-xl font-bold text-[#16382B] mb-4">
-                Recommended Local Categories
-              </h3>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-editorial text-xl font-bold text-[#16382B]">
+                  Popular Local Categories
+                </h3>
+                <Link to="/explore" className="text-xs font-bold text-[#16382B] hover:underline flex items-center gap-1">
+                  View All in Explore <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
                 {[
-                  { icon: Scissors, name: 'Tailoring', count: '12 Providers' },
-                  { icon: Utensils, name: 'Homemade Food', count: '18 Providers' },
-                  { icon: BookOpen, name: 'Home Tutors', count: '9 Providers' },
-                  { icon: Gift, name: 'Handicrafts', count: '15 Products' },
-                  { icon: Sprout, name: 'Gardening', count: '7 Providers' }
+                  { icon: Scissors, name: 'Tailoring', category: 'Tailoring' },
+                  { icon: Utensils, name: 'Homemade Food', category: 'Cooking' },
+                  { icon: BookOpen, name: 'Home Tutors', category: 'Tutoring' },
+                  { icon: Gift, name: 'Handicrafts', category: 'Handicrafts' },
+                  { icon: Sprout, name: 'Gardening', category: 'Gardening' }
                 ].map((c, i) => (
-                  <div key={i} className="bg-white p-4 rounded-2xl border border-[#E2E7E3] text-center">
-                    <c.icon className="w-5 h-5 text-[#16382B] mx-auto mb-2" />
+                  <div
+                    key={i}
+                    onClick={() => navigate(`/explore?category=${c.category}`)}
+                    className="bg-white p-4 rounded-2xl border border-[#E2E7E3] text-center hover:border-[#16382B] transition-all cursor-pointer shadow-2xs"
+                  >
+                    <c.icon className="w-6 h-6 text-[#16382B] mx-auto mb-2" />
                     <p className="font-bold text-[#16382B] text-sm">{c.name}</p>
-                    <p className="text-[11px] text-slate-500 font-medium mt-0.5">{c.count}</p>
                   </div>
                 ))}
               </div>

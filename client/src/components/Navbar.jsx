@@ -1,94 +1,185 @@
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Heart, LogOut, User } from 'lucide-react';
+import { Sparkles, Menu, X, LogOut, User, Compass, Briefcase, Package, LayoutDashboard } from 'lucide-react';
 
 export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
-    navigate('/');
+    navigate('/login');
+    setMobileMenuOpen(false);
   };
 
+  const isProvider = user?.role === 'provider';
+
   return (
-    <header className="bg-[#FBF9F4]/90 backdrop-blur-md border-b border-[#E2E7E3] sticky top-0 z-50">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <nav className="bg-white/95 backdrop-blur-md border-b border-[#E2E7E3] sticky top-0 z-40">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
           
-          {/* Logo & Tagline */}
-          <Link to="/" className="flex items-center gap-3 group focus:outline-none rounded-lg">
-            <div className="w-10 h-10 rounded-full bg-[#16382B] text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-              <Heart className="w-5 h-5 fill-current" />
+          {/* LOGO */}
+          <Link to="/" className="flex items-center gap-3 group">
+            <div className="w-10 h-10 rounded-2xl bg-[#16382B] text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
+              <Sparkles className="w-5 h-5 text-emerald-400" />
             </div>
             <div>
-              <span className="font-editorial text-2xl font-bold tracking-tight text-[#16382B] flex items-center gap-1.5">
+              <span className="font-editorial text-2xl font-bold tracking-tight text-[#16382B] block leading-none">
                 SilverHands
               </span>
-              <p className="text-xs text-slate-500 font-medium hidden sm:block">
-                Skills that matter. Opportunities that grow.
-              </p>
+              <span className="text-[10px] font-bold tracking-widest text-[#C86D51] uppercase block mt-1">
+                Digital Livelihood
+              </span>
             </div>
           </Link>
 
-          {/* Center Navigation */}
-          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-700">
-            <Link to="/" className="hover:text-[#16382B] transition-colors">
-              Home
+          {/* DESKTOP NAVIGATION */}
+          <div className="hidden md:flex items-center gap-6 text-sm font-semibold text-slate-700">
+            <Link
+              to="/explore"
+              className={`flex items-center gap-1.5 transition-colors ${
+                location.pathname.startsWith('/explore') ? 'text-[#16382B] font-bold' : 'hover:text-[#16382B]'
+              }`}
+            >
+              <Compass className="w-4 h-4 text-[#16382B]" />
+              <span>Explore</span>
             </Link>
-            <a href="#how-it-works" className="hover:text-[#16382B] transition-colors">
-              How It Works
-            </a>
-            <a href="#explore" className="hover:text-[#16382B] transition-colors">
-              Explore
-            </a>
-          </nav>
 
-          {/* Right Action Controls */}
-          <div className="flex items-center gap-4">
             {isAuthenticated ? (
               <>
-                <Link
-                  to="/dashboard"
-                  className="inline-flex items-center gap-2 bg-[#E6ECE7] hover:bg-[#D8E3DA] text-[#16382B] font-semibold px-4 py-2 rounded-xl text-sm transition-colors border border-[#D2DDD5]"
-                >
-                  <User className="w-4 h-4 text-[#16382B]" />
-                  <span>Dashboard</span>
-                  <span className="text-[11px] bg-white text-[#16382B] px-2 py-0.5 rounded-full font-bold uppercase border border-[#CBD8CE]">
-                    {user?.role === 'provider' ? 'Provider' : 'Customer'}
-                  </span>
-                </Link>
+                {isProvider ? (
+                  <>
+                    <Link
+                      to="/dashboard"
+                      className={`flex items-center gap-1.5 transition-colors ${
+                        location.pathname === '/dashboard' ? 'text-[#16382B] font-bold' : 'hover:text-[#16382B]'
+                      }`}
+                    >
+                      <LayoutDashboard className="w-4 h-4" />
+                      <span>Dashboard</span>
+                    </Link>
+                    <Link
+                      to="/provider/services"
+                      className={`flex items-center gap-1.5 transition-colors ${
+                        location.pathname.startsWith('/provider/services') ? 'text-[#16382B] font-bold' : 'hover:text-[#16382B]'
+                      }`}
+                    >
+                      <Briefcase className="w-4 h-4" />
+                      <span>My Services</span>
+                    </Link>
+                    <Link
+                      to="/provider/products"
+                      className={`flex items-center gap-1.5 transition-colors ${
+                        location.pathname.startsWith('/provider/products') ? 'text-[#16382B] font-bold' : 'hover:text-[#16382B]'
+                      }`}
+                    >
+                      <Package className="w-4 h-4" />
+                      <span>My Products</span>
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Link to="/explore?tab=services" className="hover:text-[#16382B]">Services</Link>
+                    <Link to="/explore?tab=products" className="hover:text-[#16382B]">Products</Link>
+                    <Link to="/explore?tab=providers" className="hover:text-[#16382B]">Providers</Link>
+                  </>
+                )}
 
-                <button
-                  onClick={handleLogout}
-                  className="text-slate-500 hover:text-slate-900 font-medium text-sm px-2 py-2 transition-colors flex items-center gap-1 cursor-pointer"
-                  title="Sign Out"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span className="hidden sm:inline">Logout</span>
-                </button>
+                <div className="flex items-center gap-3 pl-4 border-l border-[#E2E7E3]">
+                  <div className="flex items-center gap-2">
+                    <img
+                      src={user?.profileImage || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=150'}
+                      alt={user?.name}
+                      className="w-9 h-9 rounded-full object-cover border border-[#16382B]"
+                    />
+                    <div className="text-left text-xs">
+                      <span className="font-bold text-[#16382B] block">{user?.name}</span>
+                      <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
+                        {isProvider ? 'Skill Provider' : 'Customer'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleLogout}
+                    className="p-2 text-slate-400 hover:text-red-700 rounded-xl transition-colors cursor-pointer"
+                    title="Logout"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
+                </div>
               </>
             ) : (
               <div className="flex items-center gap-3">
-                <Link
-                  to="/login"
-                  className="text-slate-700 hover:text-[#16382B] font-semibold text-sm px-3 py-2 transition-colors"
-                >
-                  Sign In
+                <Link to="/login" className="btn-secondary text-xs py-2 px-4">
+                  Log In
                 </Link>
-                <Link
-                  to="/register"
-                  className="btn-primary text-sm py-2.5 px-5 shadow-sm"
-                >
-                  Get Started →
+                <Link to="/register" className="btn-primary text-xs py-2 px-4 shadow-xs">
+                  Join SilverHands
                 </Link>
               </div>
             )}
           </div>
 
+          {/* MOBILE MENU TOGGLE BUTTON */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden p-2 text-slate-700 rounded-xl hover:bg-[#FBF9F4]"
+          >
+            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
         </div>
       </div>
-    </header>
+
+      {/* MOBILE DROPDOWN MENU */}
+      {mobileMenuOpen && (
+        <div className="md:hidden bg-white border-b border-[#E2E7E3] px-4 pt-2 pb-6 space-y-3">
+          <Link
+            to="/explore"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block py-2 text-sm font-semibold text-[#16382B]"
+          >
+            🔍 Explore Marketplace
+          </Link>
+
+          {isAuthenticated ? (
+            <>
+              {isProvider ? (
+                <>
+                  <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">Dashboard</Link>
+                  <Link to="/provider/services" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">My Services</Link>
+                  <Link to="/provider/products" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">My Products</Link>
+                  {user?._id && (
+                    <Link to={`/providers/${user._id}`} onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-[#C86D51]">View My Public Profile</Link>
+                  )}
+                </>
+              ) : (
+                <>
+                  <Link to="/explore?tab=services" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">Services</Link>
+                  <Link to="/explore?tab=products" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">Products</Link>
+                  <Link to="/explore?tab=providers" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">Providers</Link>
+                </>
+              )}
+
+              <button
+                onClick={handleLogout}
+                className="w-full text-left py-2 text-sm font-semibold text-red-700 pt-2 border-t border-[#E2E7E3]"
+              >
+                Log Out
+              </button>
+            </>
+          ) : (
+            <div className="space-y-2 pt-2 border-t border-[#E2E7E3]">
+              <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="block btn-secondary text-center py-2 text-xs">Log In</Link>
+              <Link to="/register" onClick={() => setMobileMenuOpen(false)} className="block btn-primary text-center py-2 text-xs">Join SilverHands</Link>
+            </div>
+          )}
+        </div>
+      )}
+    </nav>
   );
 }

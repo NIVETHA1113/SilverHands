@@ -4,43 +4,127 @@ import { isDbConnected } from '../config/db.js';
 // Fallback in-memory map for demo mode if MongoDB is offline
 export const inMemoryServices = new Map();
 
-// @desc    Get all services (Public or Provider filtered)
+// @desc    Get all services (Public discovery or Provider filtered)
 // @route   GET /api/services
 // @access  Public / Provider
 export const getServices = async (req, res) => {
   try {
-    const { providerId, status, category, city } = req.query;
+    const {
+      providerId,
+      status,
+      category,
+      city,
+      search,
+      minPrice,
+      maxPrice,
+      deliveryMode,
+      sort,
+      page = 1,
+      limit = 20
+    } = req.query;
+
+    const pageNum = parseInt(page, 10) || 1;
+    const limitNum = parseInt(limit, 10) || 20;
 
     if (isDbConnected) {
       const query = {};
       if (providerId) query.providerId = providerId;
       if (status) query.status = status;
-      if (category) query.category = category;
+      if (category && category !== 'all' && category !== 'All') query.category = category;
       if (city) query['location.city'] = new RegExp(city, 'i');
 
-      const services = await Service.find(query).sort({ createdAt: -1 });
-      return res.json({ success: true, count: services.length, services });
+      if (minPrice || maxPrice) {
+        query.price = {};
+        if (minPrice) query.price.$gte = Number(minPrice);
+        if (maxPrice) query.price.$lte = Number(maxPrice);
+      }
+
+      if (deliveryMode) {
+        query.deliveryMode = deliveryMode;
+      }
+
+      if (search) {
+        const regex = new RegExp(search.trim(), 'i');
+        query.$or = [
+          { title: regex },
+          { description: regex },
+          { category: regex },
+          { skills: regex },
+          { 'location.city': regex }
+        ];
+      }
+
+      let sortOption = { createdAt: -1 };
+      if (sort === 'price_asc') sortOption = { price: 1 };
+      if (sort === 'price_desc') sortOption = { price: -1 };
+      if (sort === 'newest') sortOption = { createdAt: -1 };
+
+      const total = await Service.countDocuments(query);
+      const services = await Service.find(query)
+        .populate('providerId', 'name profileImage age location rating verification skills languages bio')
+        .sort(sortOption)
+        .skip((pageNum - 1) * limitNum)
+        .limit(limitNum);
+
+      return res.json({
+        success: true,
+        count: services.length,
+        total,
+        page: pageNum,
+        pages: Math.ceil(total / limitNum) || 1,
+        services
+      });
     } else {
       let list = Array.from(inMemoryServices.values());
       if (providerId) list = list.filter(s => s.providerId === providerId);
       if (status) list = list.filter(s => s.status === status);
-      if (category) list = list.filter(s => s.category === category);
+      if (category && category !== 'all' && category !== 'All') list = list.filter(s => s.category === category);
       if (city) list = list.filter(s => s.location?.city?.toLowerCase().includes(city.toLowerCase()));
-      return res.json({ success: true, count: list.length, services: list });
+      if (minPrice) list = list.filter(s => s.price >= Number(minPrice));
+      if (maxPrice) list = list.filter(s => s.price <= Number(maxPrice));
+      if (search) {
+        const q = search.toLowerCase();
+        list = list.filter(s =>
+          s.title?.toLowerCase().includes(q) ||
+          s.description?.toLowerCase().includes(q) ||
+          s.category?.toLowerCase().includes(q)
+        );
+      }
+
+      if (sort === 'price_asc') list.sort((a, b) => a.price - b.price);
+      else if (sort === 'price_desc') list.sort((a, b) => b.price - a.price);
+      else list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+      const total = list.length;
+      const startIndex = (pageNum - 1) * limitNum;
+      const paginated = list.slice(startIndex, startIndex + limitNum);
+
+      return res.json({
+        success: true,
+        count: paginated.length,
+        total,
+        page: pageNum,
+        pages: Math.ceil(total / limitNum) || 1,
+        services: paginated
+      });
     }
   } catch (error) {
+    console.error('[getServices Error]:', error);
     res.status(500).json({ success: false, message: error.message || 'Server error' });
   }
 };
 
-// @desc    Get single service by ID
+// @desc    Get single service by ID (with Provider populated)
 // @route   GET /api/services/:id
 // @access  Public
 export const getServiceById = async (req, res) => {
   try {
     const { id } = req.params;
     if (isDbConnected) {
-      const service = await Service.findById(id);
+      const service = await Service.findById(id).populate(
+        'providerId',
+        'name profileImage age location rating verification skills languages bio experienceYears'
+      );
       if (!service) return res.status(404).json({ success: false, message: 'Service not found' });
       return res.json({ success: true, service });
     } else {
@@ -118,7 +202,6 @@ export const updateService = async (req, res) => {
       const service = await Service.findById(id);
       if (!service) return res.status(404).json({ success: false, message: 'Service not found' });
 
-      // Ownership authorization check
       if (service.providerId.toString() !== providerId) {
         return res.status(403).json({ success: false, message: 'Forbidden. You do not own this service listing.' });
       }
@@ -142,7 +225,7 @@ export const updateService = async (req, res) => {
   }
 };
 
-// @desc    Patch service status (published / paused / draft)
+// @desc    Patch service status
 // @route   PATCH /api/services/:id/status
 // @access  Private (Owner Provider only)
 export const updateServiceStatus = async (req, res) => {

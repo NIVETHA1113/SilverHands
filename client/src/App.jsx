@@ -14,6 +14,12 @@ import ServiceFormPage from './pages/provider/ServiceFormPage';
 import ProductsListPage from './pages/provider/ProductsListPage';
 import ProductFormPage from './pages/provider/ProductFormPage';
 
+// Phase 4 Public Discovery Pages
+import ExplorePage from './pages/ExplorePage';
+import ServiceDetailPage from './pages/ServiceDetailPage';
+import ProductDetailPage from './pages/ProductDetailPage';
+import PublicProviderProfilePage from './pages/PublicProviderProfilePage';
+
 export default function App() {
   return (
     <AuthProvider>
@@ -22,9 +28,18 @@ export default function App() {
           <Navbar />
           <main className="flex-1">
             <Routes>
+              {/* Public Discovery Routes */}
               <Route path="/" element={<LandingPage />} />
+              <Route path="/explore" element={<ExplorePage />} />
+              <Route path="/services/:id" element={<ServiceDetailPage />} />
+              <Route path="/products/:id" element={<ProductDetailPage />} />
+              <Route path="/providers/:id" element={<PublicProviderProfilePage />} />
+
+              {/* Auth Routes */}
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/login" element={<LoginPage />} />
+              
+              {/* Protected User & Provider Routes */}
               <Route
                 path="/dashboard"
                 element={
@@ -94,7 +109,7 @@ export default function App() {
                 }
               />
 
-              <Route path="*" element={<LandingPage />} />
+              <Route path="*" element={<ExplorePage />} />
             </Routes>
           </main>
           <Footer />

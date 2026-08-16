@@ -4,43 +4,126 @@ import { isDbConnected } from '../config/db.js';
 // Fallback in-memory map for demo mode if MongoDB is offline
 export const inMemoryProducts = new Map();
 
-// @desc    Get all products (Public or Provider filtered)
+// @desc    Get all products (Public discovery or Provider filtered)
 // @route   GET /api/products
 // @access  Public / Provider
 export const getProducts = async (req, res) => {
   try {
-    const { providerId, status, category, city } = req.query;
+    const {
+      providerId,
+      status,
+      category,
+      city,
+      search,
+      minPrice,
+      maxPrice,
+      deliveryOption,
+      sort,
+      page = 1,
+      limit = 20
+    } = req.query;
+
+    const pageNum = parseInt(page, 10) || 1;
+    const limitNum = parseInt(limit, 10) || 20;
 
     if (isDbConnected) {
       const query = {};
       if (providerId) query.providerId = providerId;
       if (status) query.status = status;
-      if (category) query.category = category;
+      if (category && category !== 'all' && category !== 'All') query.category = category;
       if (city) query['location.city'] = new RegExp(city, 'i');
 
-      const products = await Product.find(query).sort({ createdAt: -1 });
-      return res.json({ success: true, count: products.length, products });
+      if (minPrice || maxPrice) {
+        query.price = {};
+        if (minPrice) query.price.$gte = Number(minPrice);
+        if (maxPrice) query.price.$lte = Number(maxPrice);
+      }
+
+      if (deliveryOption) {
+        query.deliveryOptions = deliveryOption;
+      }
+
+      if (search) {
+        const regex = new RegExp(search.trim(), 'i');
+        query.$or = [
+          { name: regex },
+          { description: regex },
+          { category: regex },
+          { 'location.city': regex }
+        ];
+      }
+
+      let sortOption = { createdAt: -1 };
+      if (sort === 'price_asc') sortOption = { price: 1 };
+      if (sort === 'price_desc') sortOption = { price: -1 };
+      if (sort === 'newest') sortOption = { createdAt: -1 };
+
+      const total = await Product.countDocuments(query);
+      const products = await Product.find(query)
+        .populate('providerId', 'name profileImage age location rating verification skills languages bio')
+        .sort(sortOption)
+        .skip((pageNum - 1) * limitNum)
+        .limit(limitNum);
+
+      return res.json({
+        success: true,
+        count: products.length,
+        total,
+        page: pageNum,
+        pages: Math.ceil(total / limitNum) || 1,
+        products
+      });
     } else {
       let list = Array.from(inMemoryProducts.values());
       if (providerId) list = list.filter(p => p.providerId === providerId);
       if (status) list = list.filter(p => p.status === status);
-      if (category) list = list.filter(p => p.category === category);
+      if (category && category !== 'all' && category !== 'All') list = list.filter(p => p.category === category);
       if (city) list = list.filter(p => p.location?.city?.toLowerCase().includes(city.toLowerCase()));
-      return res.json({ success: true, count: list.length, products: list });
+      if (minPrice) list = list.filter(p => p.price >= Number(minPrice));
+      if (maxPrice) list = list.filter(p => p.price <= Number(maxPrice));
+      if (search) {
+        const q = search.toLowerCase();
+        list = list.filter(p =>
+          p.name?.toLowerCase().includes(q) ||
+          p.description?.toLowerCase().includes(q) ||
+          p.category?.toLowerCase().includes(q)
+        );
+      }
+
+      if (sort === 'price_asc') list.sort((a, b) => a.price - b.price);
+      else if (sort === 'price_desc') list.sort((a, b) => b.price - a.price);
+      else list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+      const total = list.length;
+      const startIndex = (pageNum - 1) * limitNum;
+      const paginated = list.slice(startIndex, startIndex + limitNum);
+
+      return res.json({
+        success: true,
+        count: paginated.length,
+        total,
+        page: pageNum,
+        pages: Math.ceil(total / limitNum) || 1,
+        products: paginated
+      });
     }
   } catch (error) {
+    console.error('[getProducts Error]:', error);
     res.status(500).json({ success: false, message: error.message || 'Server error' });
   }
 };
 
-// @desc    Get single product by ID
+// @desc    Get single product by ID (with Provider populated)
 // @route   GET /api/products/:id
 // @access  Public
 export const getProductById = async (req, res) => {
   try {
     const { id } = req.params;
     if (isDbConnected) {
-      const product = await Product.findById(id);
+      const product = await Product.findById(id).populate(
+        'providerId',
+        'name profileImage age location rating verification skills languages bio'
+      );
       if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
       return res.json({ success: true, product });
     } else {
@@ -153,7 +236,7 @@ export const updateProduct = async (req, res) => {
   }
 };
 
-// @desc    Patch product status (published / paused / out_of_stock / draft)
+// @desc    Patch product status
 // @route   PATCH /api/products/:id/status
 // @access  Private (Owner Provider only)
 export const updateProductStatus = async (req, res) => {
