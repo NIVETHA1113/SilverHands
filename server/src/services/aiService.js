@@ -1,61 +1,67 @@
 // AI Service Module
-// Keeps LLM API key strictly on Express backend
+// Orchestrates AI requests through the AI Provider Adapter
 
+import {
+  aiExtractSkills,
+  aiGenerateProfile,
+  aiGenerateServiceDescription,
+  aiExtractRequirement,
+  aiExplainMatch
+} from './aiProvider.js';
+
+/**
+ * 1. Extract structured skills from natural language text
+ * @param {string} text
+ * @returns {Promise<{ skills: Array<{ name: string, experienceYears: number|null, proficiency: string }>, source: string }>}
+ */
 export const extractSkillsFromText = async (text) => {
-  if (!text || typeof text !== 'string') {
-    return { skills: [] };
+  if (!text || typeof text !== 'string' || !text.trim()) {
+    return { skills: [], source: 'validation_empty' };
   }
-
-  // Fallback intelligent skill extractor
-  const lower = text.toLowerCase();
-  const extractedSkills = [];
-
-  const skillKeywords = [
-    { keywords: ['tailor', 'stitch', 'blouse', 'churidar', 'sew'], name: 'Tailoring & Stitching', category: 'Fashion & Craft' },
-    { keywords: ['cook', 'baking', 'recipe', 'meal', 'south indian', 'pickle', 'snack'], name: 'Traditional Cooking', category: 'Food & Cooking' },
-    { keywords: ['teach', 'tutor', 'math', 'english', 'tamil', 'language', 'student'], name: 'Home Tuition', category: 'Teaching & Tutoring' },
-    { keywords: ['garden', 'plant', 'organic', 'flower'], name: 'Gardening Assistance', category: 'Home & Nature' },
-    { keywords: ['knit', 'crochet', 'craft', 'art', 'embroidery', 'painting'], name: 'Handicrafts & Art', category: 'Arts & Crafts' },
-    { keywords: ['childcare', 'babysitt', 'nanny'], name: 'Childcare Assistance', category: 'Care & Service' }
-  ];
-
-  // Extract years if present (e.g. "25 years", "10 yrs")
-  const yearsMatch = lower.match(/(\d+)\s*(years|yrs|year)/);
-  const years = yearsMatch ? parseInt(yearsMatch[1], 10) : 5;
-
-  let proficiency = 'Experienced';
-  if (years >= 15) proficiency = 'Expert';
-  else if (years >= 5) proficiency = 'Experienced';
-  else proficiency = 'Intermediate';
-
-  for (const sk of skillKeywords) {
-    if (sk.keywords.some(k => lower.includes(k))) {
-      extractedSkills.push({
-        name: sk.name,
-        category: sk.category,
-        experienceYears: years,
-        proficiency
-      });
-    }
-  }
-
-  if (extractedSkills.length === 0) {
-    extractedSkills.push({
-      name: 'General Consulting',
-      category: 'Consulting',
-      experienceYears: years,
-      proficiency: 'Experienced'
-    });
-  }
-
-  return {
-    skills: extractedSkills
-  };
+  return await aiExtractSkills(text.trim());
 };
 
-export const generateProfileDescription = async (userData) => {
-  const name = userData.name || 'Provider';
-  const mainSkill = userData.skills?.[0]?.name || 'traditional skills';
-  const years = userData.skills?.[0]?.experienceYears || 10;
-  return `Experienced home-based provider specializing in ${mainSkill} with over ${years} years of dedicated experience.`;
+/**
+ * 2. Generate warm, professional provider profile bio
+ * @param {object} userData { name, skills, experienceYears, location, languages }
+ * @returns {Promise<{ description: string, source: string }>}
+ */
+export const generateProfileDescription = async (userData = {}) => {
+  return await aiGenerateProfile(userData);
+};
+
+/**
+ * 3. Generate polished, customer-friendly service listing description
+ * @param {object} serviceData { title, category, skills, details, basicNotes }
+ * @returns {Promise<{ description: string, source: string }>}
+ */
+export const generateServiceDescription = async (serviceData = {}) => {
+  return await aiGenerateServiceDescription(serviceData);
+};
+
+/**
+ * 4. Extract structured requirement from customer natural language inquiry
+ * @param {string} text
+ * @returns {Promise<{ category: string, skills: string[], availability: string[], locationPreference: string, source: string }>}
+ */
+export const extractRequirementFromText = async (text) => {
+  if (!text || typeof text !== 'string' || !text.trim()) {
+    return {
+      category: 'General',
+      skills: [],
+      availability: ['Flexible'],
+      locationPreference: 'Nearby',
+      source: 'validation_empty'
+    };
+  }
+  return await aiExtractRequirement(text.trim());
+};
+
+/**
+ * 5. Generate natural-language match explanation for matchScore & reasons
+ * @param {object} params { matchScore: number, reasons: string[] }
+ * @returns {Promise<{ explanation: string, source: string }>}
+ */
+export const explainMatchReasons = async ({ matchScore = 0, reasons = [] }) => {
+  return await aiExplainMatch({ matchScore, reasons });
 };
