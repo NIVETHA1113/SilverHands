@@ -8,6 +8,7 @@ import serviceRoutes from './routes/serviceRoutes.js';
 import productRoutes from './routes/productRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
 import searchRoutes from './routes/searchRoutes.js';
+import matchingRoutes from './routes/matchingRoutes.js';
 
 dotenv.config();
 
@@ -31,6 +32,7 @@ app.use('/api/services', serviceRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/search', searchRoutes);
+app.use('/api/matching', matchingRoutes);
 
 // Health Check Route
 app.get('/api/health', (req, res) => {
