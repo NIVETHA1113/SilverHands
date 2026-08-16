@@ -2,6 +2,12 @@ import User from '../models/User.js';
 import Service from '../models/Service.js';
 import Product from '../models/Product.js';
 import { isDbConnected } from '../config/db.js';
+import {
+  buildProviderQuery,
+  buildSortOption,
+  filterInMemoryProviders,
+  normalizePagination
+} from '../services/discoveryService.js';
 
 // Fallback in-memory map for demo mode if MongoDB is offline
 export const inMemoryUsers = new Map();
@@ -11,50 +17,37 @@ export const inMemoryUsers = new Map();
 // @access  Public
 export const getPublicProviders = async (req, res) => {
   try {
-    const { search, city, skill, sort, page = 1, limit = 20 } = req.query;
-    const pageNum = parseInt(page, 10) || 1;
-    const limitNum = parseInt(limit, 10) || 20;
+    const {
+      search,
+      city,
+      skill,
+      language,
+      sort = 'relevance',
+      page = 1,
+      limit = 20
+    } = req.query;
+
+    const { pageNum, limitNum, skip } = normalizePagination(page, limit);
 
     if (isDbConnected) {
-      const query = {
-        role: 'provider',
-        $or: [
-          { 'onboarding.completed': true },
-          { skills: { $exists: true, $not: { $size: 0 } } }
-        ]
-      };
+      // Build query using discovery service
+      const query = buildProviderQuery({
+        search,
+        city,
+        skill,
+        language,
+        hasPublishedContent: true
+      });
 
-      if (city) {
-        query['location.city'] = new RegExp(city, 'i');
-      }
+      // Build sort option
+      const sortOption = buildSortOption(sort);
 
-      if (skill) {
-        query['skills.name'] = new RegExp(skill, 'i');
-      }
-
-      if (search) {
-        const regex = new RegExp(search.trim(), 'i');
-        query.$and = [
-          {
-            $or: [
-              { name: regex },
-              { bio: regex },
-              { 'skills.name': regex },
-              { 'location.city': regex }
-            ]
-          }
-        ];
-      }
-
-      let sortOption = { rating: -1, createdAt: -1 };
-      if (sort === 'experience') sortOption = { 'skills.experienceYears': -1 };
-      if (sort === 'newest') sortOption = { createdAt: -1 };
-
+      // Execute query
       const total = await User.countDocuments(query);
       const providers = await User.find(query)
         .select('-password -email -phone')
         .sort(sortOption)
-        .skip((pageNum - 1) * limitNum)
+        .skip(skip)
         .limit(limitNum);
 
       return res.json({
@@ -66,20 +59,29 @@ export const getPublicProviders = async (req, res) => {
         providers
       });
     } else {
-      let list = Array.from(inMemoryUsers.values()).filter(u => u.role === 'provider');
-      if (city) list = list.filter(u => u.location?.city?.toLowerCase().includes(city.toLowerCase()));
-      if (search) {
-        const q = search.toLowerCase();
-        list = list.filter(u =>
-          u.name?.toLowerCase().includes(q) ||
-          u.bio?.toLowerCase().includes(q) ||
-          u.skills?.some(s => s.name?.toLowerCase().includes(q))
-        );
+      // Fallback: in-memory filtering
+      let list = Array.from(inMemoryUsers.values());
+
+      list = filterInMemoryProviders(list, {
+        search,
+        city,
+        skill,
+        language
+      });
+
+      // Sort
+      if (sort === 'experience') {
+        list.sort((a, b) => {
+          const maxExperienceA = Math.max(...(a.skills?.map(s => s.experienceYears) || [0]));
+          const maxExperienceB = Math.max(...(b.skills?.map(s => s.experienceYears) || [0]));
+          return maxExperienceB - maxExperienceA;
+        });
+      } else {
+        list.sort((a, b) => (b.rating || 0) - (a.rating || 0) || new Date(b.createdAt) - new Date(a.createdAt));
       }
 
       const total = list.length;
-      const startIndex = (pageNum - 1) * limitNum;
-      const paginated = list.slice(startIndex, startIndex + limitNum).map(({ password, email, phone, ...rest }) => rest);
+      const paginated = list.slice(skip, skip + limitNum).map(({ password, email, phone, ...rest }) => rest);
 
       return res.json({
         success: true,
@@ -95,9 +97,6 @@ export const getPublicProviders = async (req, res) => {
     res.status(500).json({ success: false, message: error.message || 'Server error' });
   }
 };
-
-// @desc    Get public provider profile & published listings by ID
-// @route   GET /api/users/providers/:id/public
 // @access  Public
 export const getPublicProviderById = async (req, res) => {
   try {

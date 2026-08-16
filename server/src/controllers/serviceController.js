@@ -1,5 +1,11 @@
 import Service from '../models/Service.js';
 import { isDbConnected } from '../config/db.js';
+import {
+  buildListingQuery,
+  buildSortOption,
+  filterInMemoryListings,
+  normalizePagination
+} from '../services/discoveryService.js';
 
 // Fallback in-memory map for demo mode if MongoDB is offline
 export const inMemoryServices = new Map();
@@ -11,59 +17,46 @@ export const getServices = async (req, res) => {
   try {
     const {
       providerId,
-      status,
+      status = 'published',
       category,
       city,
       search,
       minPrice,
       maxPrice,
       deliveryMode,
-      sort,
+      skills,
+      availableDays,
+      sort = 'newest',
       page = 1,
       limit = 20
     } = req.query;
 
-    const pageNum = parseInt(page, 10) || 1;
-    const limitNum = parseInt(limit, 10) || 20;
+    const { pageNum, limitNum, skip } = normalizePagination(page, limit);
 
     if (isDbConnected) {
-      const query = {};
-      if (providerId) query.providerId = providerId;
-      if (status) query.status = status;
-      if (category && category !== 'all' && category !== 'All') query.category = category;
-      if (city) query['location.city'] = new RegExp(city, 'i');
+      // Build query using discovery service
+      const query = buildListingQuery({
+        status,
+        category,
+        city,
+        minPrice,
+        maxPrice,
+        search,
+        providerId,
+        skills: skills ? (Array.isArray(skills) ? skills : [skills]) : null,
+        deliveryMode,
+        availabilityDays: availableDays ? (Array.isArray(availableDays) ? availableDays : [availableDays]) : null
+      });
 
-      if (minPrice || maxPrice) {
-        query.price = {};
-        if (minPrice) query.price.$gte = Number(minPrice);
-        if (maxPrice) query.price.$lte = Number(maxPrice);
-      }
+      // Build sort option
+      const sortOption = buildSortOption(sort);
 
-      if (deliveryMode) {
-        query.deliveryMode = deliveryMode;
-      }
-
-      if (search) {
-        const regex = new RegExp(search.trim(), 'i');
-        query.$or = [
-          { title: regex },
-          { description: regex },
-          { category: regex },
-          { skills: regex },
-          { 'location.city': regex }
-        ];
-      }
-
-      let sortOption = { createdAt: -1 };
-      if (sort === 'price_asc') sortOption = { price: 1 };
-      if (sort === 'price_desc') sortOption = { price: -1 };
-      if (sort === 'newest') sortOption = { createdAt: -1 };
-
+      // Execute query
       const total = await Service.countDocuments(query);
       const services = await Service.find(query)
         .populate('providerId', 'name profileImage age location rating verification skills languages bio')
         .sort(sortOption)
-        .skip((pageNum - 1) * limitNum)
+        .skip(skip)
         .limit(limitNum);
 
       return res.json({
@@ -75,29 +68,29 @@ export const getServices = async (req, res) => {
         services
       });
     } else {
+      // Fallback: in-memory filtering
       let list = Array.from(inMemoryServices.values());
-      if (providerId) list = list.filter(s => s.providerId === providerId);
-      if (status) list = list.filter(s => s.status === status);
-      if (category && category !== 'all' && category !== 'All') list = list.filter(s => s.category === category);
-      if (city) list = list.filter(s => s.location?.city?.toLowerCase().includes(city.toLowerCase()));
-      if (minPrice) list = list.filter(s => s.price >= Number(minPrice));
-      if (maxPrice) list = list.filter(s => s.price <= Number(maxPrice));
-      if (search) {
-        const q = search.toLowerCase();
-        list = list.filter(s =>
-          s.title?.toLowerCase().includes(q) ||
-          s.description?.toLowerCase().includes(q) ||
-          s.category?.toLowerCase().includes(q)
-        );
-      }
 
+      list = filterInMemoryListings(list, {
+        status,
+        category,
+        city,
+        minPrice,
+        maxPrice,
+        search,
+        providerId,
+        skills: skills ? (Array.isArray(skills) ? skills : [skills]) : null,
+        deliveryMode,
+        availabilityDays: availableDays ? (Array.isArray(availableDays) ? availableDays : [availableDays]) : null
+      });
+
+      // Sort
       if (sort === 'price_asc') list.sort((a, b) => a.price - b.price);
       else if (sort === 'price_desc') list.sort((a, b) => b.price - a.price);
       else list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
       const total = list.length;
-      const startIndex = (pageNum - 1) * limitNum;
-      const paginated = list.slice(startIndex, startIndex + limitNum);
+      const paginated = list.slice(skip, skip + limitNum);
 
       return res.json({
         success: true,
