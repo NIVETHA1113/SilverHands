@@ -6,6 +6,10 @@ import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import serviceRoutes from './routes/serviceRoutes.js';
 import productRoutes from './routes/productRoutes.js';
+import opportunityRoutes from './routes/opportunityRoutes.js';
+import applicationRoutes from './routes/applicationRoutes.js';
+import reviewRoutes from './routes/reviewRoutes.js';
+import matchingRoutes from './routes/matchingRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
 import searchRoutes from './routes/searchRoutes.js';
 import chatbotRoutes from './routes/chatbotRoutes.js';
@@ -30,9 +34,13 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/opportunities', opportunityRoutes);
+app.use('/api/applications', applicationRoutes);
+app.use('/api/matching', matchingRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/chatbot', chatbotRoutes);
+app.use('/api/users', reviewRoutes); // mounts /api/users/:id/reviews & /api/users/:id/trust
 
 // Health Check Route
 app.get('/api/health', (req, res) => {
