@@ -89,6 +89,24 @@ export default function ExplorePage() {
   const [loading,     setLoading]     = useState(true);
   const [error,       setError]       = useState(null);
 
+  // ── Sync state from URL whenever searchParams changes ────────────────
+  // This handles navbar links like /explore?tab=services that update the
+  // URL without remounting the component (React Router behaviour).
+  useEffect(() => {
+    const tab      = searchParams.get('tab')      || 'services';
+    const q        = searchParams.get('q')        || '';
+    const category = searchParams.get('category') || 'All';
+    const city     = searchParams.get('city')     || 'All Cities';
+    const page     = Number(searchParams.get('page')) || 1;
+
+    setActiveTab(tab);
+    setSearchQuery(q);
+    setSelectedCategory(category);
+    setSelectedCity(city);
+    setCurrentPage(page);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
   // ── Push readable params to URL ───────────────────────────────────────
   const pushUrlParams = (overrides = {}) => {
     const next = {
