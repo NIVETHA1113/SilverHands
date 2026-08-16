@@ -4,42 +4,51 @@ const opportunitySchema = new mongoose.Schema({
   customerId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    required: true,
+    index: true
   },
   title: {
     type: String,
-    required: true,
+    required: [true, 'Title is required'],
     trim: true
   },
   description: {
     type: String,
-    required: true
+    required: [true, 'Description is required']
   },
   category: {
     type: String,
-    required: true
+    required: [true, 'Category is required'],
+    index: true
   },
-  requiredSkills: [{
-    type: String
-  }],
+  skills: {
+    type: [String],
+    default: []
+  },
   budget: {
+    type: Number,
+    required: [true, 'Budget is required'],
+    min: 0
+  },
+  budgetType: {
     type: String,
-    required: true
+    enum: ['fixed', 'per_hour', 'per_day'],
+    default: 'fixed'
   },
   location: {
-    type: String,
-    required: true
+    city: { type: String, default: '' },
+    latitude: { type: Number, default: null },
+    longitude: { type: Number, default: null }
   },
-  latitude: Number,
-  longitude: Number,
   availability: {
-    type: String,
-    default: 'Flexible'
+    type: [String],
+    default: []
   },
   status: {
     type: String,
-    enum: ['open', 'in_progress', 'completed', 'closed'],
-    default: 'open'
+    enum: ['open', 'paused', 'closed', 'completed'],
+    default: 'open',
+    index: true
   }
 }, {
   timestamps: true

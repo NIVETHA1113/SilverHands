@@ -36,3 +36,57 @@ api.interceptors.response.use(
 );
 
 export default api;
+
+// ─── Opportunity API ─────────────────────────────────────────────────────────
+
+export const opportunityAPI = {
+  // Public browse
+  getAll: (params = {}) => api.get('/opportunities', { params }),
+  getById: (id) => api.get(`/opportunities/${id}`),
+
+  // Protected — customer
+  create: (data) => api.post('/opportunities', data),
+  update: (id, data) => api.put(`/opportunities/${id}`, data),
+  updateStatus: (id, status) => api.patch(`/opportunities/${id}/status`, { status }),
+  delete: (id) => api.delete(`/opportunities/${id}`),
+  getMy: () => api.get('/opportunities/my'),
+
+  // Protected — view applications on an opportunity (customer only)
+  getApplications: (opportunityId) => api.get(`/opportunities/${opportunityId}/applications`),
+
+  // Protected — provider applies
+  apply: (opportunityId, data) => api.post(`/opportunities/${opportunityId}/apply`, data),
+};
+
+// ─── Application API ──────────────────────────────────────────────────────────
+
+export const applicationAPI = {
+  // Provider: get all own applications
+  getMy: () => api.get('/applications/my'),
+
+  // Get application details by ID
+  getById: (id) => api.get(`/applications/${id}`),
+
+  // Customer: accept / reject
+  accept: (id) => api.patch(`/applications/${id}/accept`),
+  reject: (id) => api.patch(`/applications/${id}/reject`),
+
+  // Provider: withdraw
+  withdraw: (id) => api.patch(`/applications/${id}/withdraw`),
+
+  // Customer: mark complete
+  complete: (id) => api.patch(`/applications/${id}/complete`),
+
+  // Customer: post review after completion
+  createReview: (id, data) => {
+    const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
+    return api.post(`/applications/${id}/review`, data, isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : undefined);
+  },
+};
+
+// ─── Review / Trust API ───────────────────────────────────────────────────────
+
+export const reviewAPI = {
+  getProviderReviews: (providerId) => api.get(`/users/${providerId}/reviews`),
+  getProviderTrust: (providerId) => api.get(`/users/${providerId}/trust`),
+};

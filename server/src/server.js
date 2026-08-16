@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
@@ -8,6 +10,9 @@ import serviceRoutes from './routes/serviceRoutes.js';
 import productRoutes from './routes/productRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
 import searchRoutes from './routes/searchRoutes.js';
+import opportunityRoutes from './routes/opportunityRoutes.js';
+import applicationRoutes from './routes/applicationRoutes.js';
+import reviewRoutes from './routes/reviewRoutes.js';
 
 dotenv.config();
 console.log('[DEBUG] MongoDB URI loaded:', process.env.MONGODB_URI ? 'YES' : 'NO');
@@ -15,6 +20,8 @@ console.log('[DEBUG] MongoDB URI type:', process.env.MONGODB_URI?.startsWith('mo
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Connect to MongoDB
 connectDB();
@@ -24,6 +31,7 @@ app.use(cors({
   origin: '*',
   credentials: true
 }));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.json());
 
 // Routes
@@ -33,6 +41,10 @@ app.use('/api/services', serviceRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/search', searchRoutes);
+app.use('/api/opportunities', opportunityRoutes);
+app.use('/api/applications', applicationRoutes);
+// Review sub-routes mounted on /api/users (GET /api/users/:id/reviews and /trust)
+app.use('/api/users', reviewRoutes);
 
 // Health Check Route
 app.get('/api/health', (req, res) => {
