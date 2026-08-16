@@ -1,10 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import {
   Search, Filter, MapPin, Star, ShieldCheck, X,
-  ChevronLeft, ChevronRight, Briefcase, Package, UserCheck, ArrowRight
+  ChevronLeft, ChevronRight, Briefcase, Package, UserCheck, ArrowRight,
+  Sparkles, ChevronDown, ChevronUp
 } from 'lucide-react';
 import api from '../services/api';
+import { fetchProviderMatches } from '../services/matchingService';
+import MatchScore from '../components/matching/MatchScore';
+import MatchBreakdown from '../components/matching/MatchBreakdown';
+import MatchReasons from '../components/matching/MatchReasons';
 
 // ─── Static filter options ─────────────────────────────────────────────────
 const categories = [
@@ -63,6 +68,17 @@ export default function ExplorePage() {
 
   // ── UI state ──────────────────────────────────────────────────────────
   const [showMobileFilter, setShowMobileFilter] = useState(false);
+
+  // ── Phase 6 matching state (providers tab only, non-breaking) ─────────
+  const [showMatchPanel,  setShowMatchPanel]  = useState(false);
+  const [matchSkillInput, setMatchSkillInput] = useState('');
+  const [matchSkills,     setMatchSkills]     = useState([]);
+  const [matchCity,       setMatchCity]       = useState('');
+  const [matchDays,       setMatchDays]       = useState([]);
+  const [matchResults,    setMatchResults]    = useState(null);   // null = not yet run
+  const [matchLoading,    setMatchLoading]    = useState(false);
+  const [matchError,      setMatchError]      = useState(null);
+  const [expandedMatch,   setExpandedMatch]   = useState(null);  // providerId with open breakdown
 
   // ── Result state ──────────────────────────────────────────────────────
   const [results,     setResults]     = useState([]);
@@ -223,6 +239,57 @@ export default function ExplorePage() {
   const toggleLanguage       = toggle(setSelectedLanguages);
 
   const sortOptions = activeTab === 'providers' ? SORT_PROVIDERS : SORT_SERVICES_PRODUCTS;
+
+  // ── Phase 6 matching helpers ──────────────────────────────────────────
+
+  const addMatchSkill = () => {
+    const s = matchSkillInput.trim();
+    if (s && !matchSkills.includes(s)) setMatchSkills(prev => [...prev, s]);
+    setMatchSkillInput('');
+  };
+
+  const removeMatchSkill = (s) =>
+    setMatchSkills(prev => prev.filter(k => k !== s));
+
+  const toggleMatchDay = (day) =>
+    setMatchDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]);
+
+  const handleFindMatches = useCallback(async () => {
+    setMatchLoading(true);
+    setMatchError(null);
+    setMatchResults(null);
+    try {
+      const requirement = {
+        skills:       matchSkills,
+        location:     matchCity ? { city: matchCity } : {},
+        availability: matchDays,
+      };
+      const data = await fetchProviderMatches(requirement);
+      setMatchResults(data.providers || []);
+    } catch (err) {
+      setMatchError(err.message || 'Matching failed. Please try again.');
+    } finally {
+      setMatchLoading(false);
+    }
+  }, [matchSkills, matchCity, matchDays]);
+
+  const clearMatchResults = () => {
+    setMatchResults(null);
+    setMatchSkills([]);
+    setMatchSkillInput('');
+    setMatchCity('');
+    setMatchDays([]);
+    setMatchError(null);
+    setExpandedMatch(null);
+  };
+
+  // Reset match results when tab changes away from providers
+  useEffect(() => {
+    if (activeTab !== 'providers') {
+      setMatchResults(null);
+      setShowMatchPanel(false);
+    }
+  }, [activeTab]);
 
   // ── Filter panel (reused for sidebar & mobile drawer) ─────────────────
   const FilterPanel = () => (
@@ -707,6 +774,233 @@ export default function ExplorePage() {
                   })}
                 </div>
               )
+            )}
+
+            {/* ── MATCHING PANEL (providers tab only, non-breaking) ── */}
+            {!loading && activeTab === 'providers' && (
+              <div className="bg-white rounded-2xl border border-[#E2E7E3] overflow-hidden">
+                {/* Panel header / toggle */}
+                <button
+                  onClick={() => setShowMatchPanel(v => !v)}
+                  className="w-full flex items-center justify-between p-4 hover:bg-[#FBF9F4] transition-colors"
+                  aria-expanded={showMatchPanel}
+                >
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-emerald-700" aria-hidden="true" />
+                    <span className="text-sm font-bold text-[#16382B]">Find Best Match</span>
+                    <span className="text-xs text-slate-500 hidden sm:inline">
+                      — score &amp; rank providers against your requirements
+                    </span>
+                    {matchResults && (
+                      <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-2 py-0.5 rounded-full">
+                        {matchResults.length} ranked
+                      </span>
+                    )}
+                  </div>
+                  {showMatchPanel
+                    ? <ChevronUp className="w-4 h-4 text-slate-400 shrink-0" />
+                    : <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
+                  }
+                </button>
+
+                {/* Panel body */}
+                {showMatchPanel && (
+                  <div className="p-4 pt-0 border-t border-[#E2E7E3] space-y-4">
+
+                    {/* Skills input */}
+                    <div>
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">
+                        Required Skills
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={matchSkillInput}
+                          onChange={(e) => setMatchSkillInput(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addMatchSkill(); }}}
+                          placeholder="e.g. Tailoring, Cooking…"
+                          className="input-editorial flex-1 text-sm py-2"
+                        />
+                        <button
+                          onClick={addMatchSkill}
+                          disabled={!matchSkillInput.trim()}
+                          className="btn-secondary text-xs py-2 px-3 disabled:opacity-40"
+                        >
+                          Add
+                        </button>
+                      </div>
+                      {matchSkills.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {matchSkills.map((s) => (
+                            <span key={s}
+                              className="inline-flex items-center gap-1 bg-[#16382B] text-white text-xs font-semibold px-2.5 py-1 rounded-full">
+                              {s}
+                              <button onClick={() => removeMatchSkill(s)} aria-label={`Remove ${s}`}>
+                                <X className="w-3 h-3" />
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* City + Availability row */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">
+                          City
+                        </label>
+                        <select
+                          value={matchCity}
+                          onChange={(e) => setMatchCity(e.target.value)}
+                          className="input-editorial w-full text-sm py-2 bg-white"
+                        >
+                          <option value="">Any city</option>
+                          {citiesList.filter(c => c !== 'All Cities').map((c) => (
+                            <option key={c} value={c}>{c}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">
+                          Availability
+                        </label>
+                        <div className="flex flex-wrap gap-1.5">
+                          {availabilityDays.map((day) => (
+                            <button key={day} onClick={() => toggleMatchDay(day)}
+                              className={`py-1 px-2.5 rounded-lg text-xs font-semibold transition-all ${
+                                matchDays.includes(day)
+                                  ? 'bg-[#16382B] text-white'
+                                  : 'bg-[#FBF9F4] text-slate-700 border border-[#E2E7E3] hover:border-[#16382B]'
+                              }`}>
+                              {day.slice(0, 3)}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <button
+                        onClick={handleFindMatches}
+                        disabled={matchLoading}
+                        className="btn-primary text-sm py-2.5 px-6 flex items-center gap-2 disabled:opacity-60"
+                      >
+                        {matchLoading ? (
+                          <>
+                            <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            Matching…
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-3.5 h-3.5" />
+                            Find Matches
+                          </>
+                        )}
+                      </button>
+                      {matchResults !== null && (
+                        <button onClick={clearMatchResults}
+                          className="text-xs text-slate-500 hover:text-red-600 underline">
+                          Clear results
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Match error */}
+                    {matchError && (
+                      <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl p-3">
+                        {matchError}
+                      </p>
+                    )}
+
+                    {/* Match results */}
+                    {matchResults !== null && !matchLoading && (
+                      matchResults.length === 0 ? (
+                        <div className="text-center py-8 text-slate-500 text-sm">
+                          <Sparkles className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                          No providers matched your requirements. Try broadening your criteria.
+                        </div>
+                      ) : (
+                        <div className="space-y-3 pt-1">
+                          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                            {matchResults.length} providers ranked by match score
+                          </p>
+                          {matchResults.map((match) => {
+                            const prov = match.provider || {};
+                            const isExpanded = expandedMatch === match.providerId;
+                            return (
+                              <div key={match.providerId}
+                                className="bg-[#FBF9F4] rounded-2xl border border-[#E2E7E3] p-4 space-y-3">
+
+                                {/* Top row: avatar + name + score pill */}
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="flex items-center gap-3 min-w-0">
+                                    <img
+                                      src={prov.profileImage || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200'}
+                                      alt={prov.name || 'Provider'}
+                                      className="w-11 h-11 rounded-full object-cover border-2 border-[#16382B] shrink-0"
+                                    />
+                                    <div className="min-w-0">
+                                      <div className="flex items-center gap-1.5 flex-wrap">
+                                        <span className="font-editorial text-base font-bold text-[#16382B] truncate">
+                                          {prov.name || 'Provider'}
+                                        </span>
+                                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                      </div>
+                                      <p className="text-xs text-slate-500 flex items-center gap-1">
+                                        <MapPin className="w-3 h-3 text-[#16382B] shrink-0" />
+                                        {match.provider?.distanceKm != null
+                                          ? `${match.provider.distanceKm} km away`
+                                          : (prov.location?.city || 'Location unavailable')}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  {/* MatchScore inline pill — score from backend, never calculated here */}
+                                  <MatchScore score={match.matchScore} inline />
+                                </div>
+
+                                {/* Compact breakdown (always visible) */}
+                                <MatchBreakdown breakdown={match.breakdown} compact />
+
+                                {/* Toggle detailed reasons */}
+                                <button
+                                  onClick={() => setExpandedMatch(isExpanded ? null : match.providerId)}
+                                  className="text-xs text-[#16382B] font-semibold flex items-center gap-1 hover:underline"
+                                  aria-expanded={isExpanded}
+                                >
+                                  {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                                  {isExpanded ? 'Hide details' : 'Why this match?'}
+                                </button>
+
+                                {isExpanded && (
+                                  <div className="border-t border-[#E2E7E3] pt-3 space-y-3">
+                                    <MatchReasons reasons={match.reasons} compact />
+                                    {prov.skills?.length > 0 && (
+                                      <div className="flex flex-wrap gap-1.5">
+                                        {prov.skills.map((s, i) => (
+                                          <span key={i} className="badge-sage text-xs">
+                                            {s.name}{s.experienceYears ? ` (${s.experienceYears}+ yrs)` : ''}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
+                                    <Link to={`/providers/${match.providerId}`}
+                                      className="btn-secondary text-xs py-2 w-full text-center flex items-center justify-center gap-1 bg-white hover:bg-[#FBF9F4] mt-1">
+                                      View Full Profile <ArrowRight className="w-3.5 h-3.5" />
+                                    </Link>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )
+                    )}
+                  </div>
+                )}
+              </div>
             )}
 
             {/* ── PROVIDERS grid ── */}

@@ -1,226 +1,523 @@
-import { calculateDistance } from '../utils/haversine.js';
+/**
+ * matchingService.js  —  SilverHands Phase 6
+ *
+ * Deterministic, rule-based provider matching.
+ * NO AI, NO randomness, NO external APIs.
+ *
+ * ─── Scoring weights ──────────────────────────────────────────────────────
+ *   Skill compatibility   50 %   (most important — customer needs the skill)
+ *   Location proximity    25 %   (physical accessibility)
+ *   Availability          15 %   (scheduling fit)
+ *   Rating                10 %   (quality signal)
+ *
+ * ─── Rating fallback ─────────────────────────────────────────────────────
+ *   The User model stores `rating` with a Mongoose default of 4.8, so a
+ *   stored value of 4.8 is treated as a real rating.
+ *   If the raw value is null / undefined / NaN (provider has never been
+ *   rated and the default was not applied), the rating component is set to
+ *   null and the other three components are re-normalised to sum to 100 %
+ *   using their relative weights (50/90, 25/90, 15/90).
+ *   This keeps the final score meaningful rather than artificially penalising
+ *   an un-rated provider.
+ *
+ * ─── Skill normalisation rules ───────────────────────────────────────────
+ *   1. Lower-case and strip non-alpha characters.
+ *   2. Collapse whitespace.
+ *   3. Apply the SKILL_ALIASES map (common synonyms / abbreviations).
+ *   "tailoring", "tailor", "stitching", "sewing" → "tailoring"
+ *   Case variations ("TAILORING", "Tailoring") resolve to the same token.
+ *
+ * ─── Location scoring rule ───────────────────────────────────────────────
+ *   When both coordinate pairs are valid:
+ *     score = clamp(100 − (distanceKm / MAX_DISTANCE_KM) × 100, 0, 100)
+ *     MAX_DISTANCE_KM default = 25 km; customisable per request.
+ *     Provider at 0 km  → 100.  Provider at 25 km → 0.  Linear decay.
+ *   When coordinates are unavailable, text fallback:
+ *     Same city    → 100   Same state → 70   Same country → 40   None → 0
+ *
+ * ─── Availability scoring rule ───────────────────────────────────────────
+ *   matchedDays / requestedDays × 100  (0–100, integer)
+ *   Days compared case-insensitively.
+ *   If no availability is requested → 100 (not a constraint).
+ *   If provider has no days on record → 0.
+ *
+ * ─── Determinism guarantee ───────────────────────────────────────────────
+ *   Same inputs → same output, always.
+ *   Tie-breaking: matchScore DESC → rating DESC (where available) → name ASC.
+ */
 
+import { getDistance, textLocationScore, isValidCoordPair } from './locationService.js';
+
+// ─── Constants ─────────────────────────────────────────────────────────────
+
+/** Default maximum distance in km for location scoring (linear decay). */
+const DEFAULT_MAX_DISTANCE_KM = 25;
+
+/**
+ * Scoring weights.  Must sum to 1.0.
+ * Adjusted weights when rating is unavailable (skill + location + availability
+ * split across 0.90 of the original scale).
+ */
+const WEIGHTS = {
+  skill:        0.50,
+  location:     0.25,
+  availability: 0.15,
+  rating:       0.10,
+};
+
+// Weights when rating is unknown — re-normalised to 1.0
+const WEIGHTS_NO_RATING = {
+  skill:        WEIGHTS.skill        / (1 - WEIGHTS.rating),   // ~0.5556
+  location:     WEIGHTS.location     / (1 - WEIGHTS.rating),   // ~0.2778
+  availability: WEIGHTS.availability / (1 - WEIGHTS.rating),   // ~0.1667
+};
+
+// ─── Skill synonym map ─────────────────────────────────────────────────────
+
+/**
+ * Maps raw token → canonical token.
+ * Keys and values must already be lower-case, trimmed, non-special.
+ */
 const SKILL_ALIASES = {
-  tailor: 'tailoring',
-  tailoring: 'tailoring',
-  stitching: 'tailoring',
-  sewing: 'tailoring',
-  sew: 'tailoring',
-  'custom tailoring': 'tailoring',
-  dressmaking: 'dressmaking',
-  embroidery: 'embroidery',
-  designer: 'design',
-  designing: 'design'
+  // Tailoring cluster
+  tailor:            'tailoring',
+  tailoring:         'tailoring',
+  stitching:         'tailoring',
+  stitch:            'tailoring',
+  sewing:            'tailoring',
+  sew:               'tailoring',
+  dressmaking:       'tailoring',
+  'custom tailoring':'tailoring',
+  alteration:        'tailoring',
+  alterations:       'tailoring',
+
+  // Cooking cluster
+  cook:              'cooking',
+  cooking:           'cooking',
+  baking:            'baking',
+  baker:             'baking',
+
+  // Teaching cluster
+  teach:             'teaching',
+  teaching:          'teaching',
+  tutor:             'tutoring',
+  tutoring:          'tutoring',
+  tuition:           'tutoring',
+
+  // Design cluster
+  design:            'design',
+  designing:         'design',
+  designer:          'design',
+
+  // Embroidery
+  embroidery:        'embroidery',
+
+  // Gardening
+  garden:            'gardening',
+  gardening:         'gardening',
+
+  // Handicrafts
+  craft:             'handicrafts',
+  crafts:            'handicrafts',
+  handicraft:        'handicrafts',
+  handicrafts:       'handicrafts',
 };
 
-const clamp = (value, min = 0, max = 100) => Math.min(Math.max(value, min), max);
+// ─── Internal helpers ──────────────────────────────────────────────────────
 
-const normalizeSkillValue = (value) => {
-  if (value == null) return '';
-  const raw = String(value).trim().toLowerCase();
-  if (!raw) return '';
+const clamp = (v, min = 0, max = 100) => Math.min(Math.max(v, min), max);
 
-  const cleaned = raw
-    .replace(/[^a-z\s]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-  if (!cleaned) return '';
-
-  const words = cleaned.split(' ').map(token => SKILL_ALIASES[token] || token);
-  return words.join(' ').replace(/\s+/g, ' ').trim();
+/**
+ * Normalise a single skill string to its canonical form.
+ * Returns '' when the input produces no meaningful token.
+ */
+const normaliseSkillToken = (raw) => {
+  if (raw == null) return '';
+  const s = String(raw).trim().toLowerCase().replace(/[^a-z\s]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!s) return '';
+  // Apply alias map word-by-word, then rejoin
+  const canonical = s.split(' ').map(w => SKILL_ALIASES[w] || w).join(' ').replace(/\s+/g, ' ').trim();
+  // Also check the full phrase as an alias key
+  return SKILL_ALIASES[canonical] || canonical;
 };
 
-export const normalizeSkills = (skills = []) => {
+/**
+ * Normalise an array of skill values.
+ * Deduplicates after normalisation.
+ *
+ * @param {Array<string|{name:string}>} skills
+ * @returns {string[]}
+ */
+export const normaliseSkills = (skills = []) => {
   if (!skills) return [];
   const list = Array.isArray(skills) ? skills : [skills];
-  return [...new Set(list.map(normalizeSkillValue).filter(Boolean))];
+  const tokens = list.map(s => {
+    // Accept both plain strings and { name } objects (User.skills format)
+    const raw = typeof s === 'object' && s !== null ? (s.name || '') : s;
+    return normaliseSkillToken(raw);
+  }).filter(Boolean);
+  return [...new Set(tokens)];
 };
 
-export const computeSkillScore = (requestedSkills = [], candidateSkills = []) => {
-  const required = normalizeSkills(requestedSkills);
-  const available = normalizeSkills(candidateSkills);
+// ─── Scoring functions ─────────────────────────────────────────────────────
 
+/**
+ * Skill compatibility score  (0 – 100).
+ *
+ * Scoring per requested skill:
+ *   Exact normalised match  → 1.0 point
+ *   Partial match (substring in either direction) → 0.5 point
+ *   No match → 0
+ *
+ * Final = (totalPoints / requestedCount) × 100, rounded to integer.
+ *
+ * @param {Array} requestedSkills  Customer's requested skills
+ * @param {Array} candidateSkills  Provider's skills (strings or {name} objects)
+ * @returns {number}
+ */
+export const computeSkillScore = (requestedSkills = [], candidateSkills = []) => {
+  const required  = normaliseSkills(requestedSkills);
+  const available = normaliseSkills(candidateSkills);
+
+  // If no skills were requested, this factor is not a constraint → 100
   if (!required.length) return 100;
+  // Provider has no skills on record → 0
   if (!available.length) return 0;
 
-  let total = 0;
-  for (const requiredSkill of required) {
-    const directMatch = available.some(skill => skill === requiredSkill);
-    if (directMatch) {
-      total += 1;
+  let points = 0;
+  for (const req of required) {
+    if (available.includes(req)) {
+      points += 1;
       continue;
     }
-
-    const partialMatch = available.some(skill => skill.includes(requiredSkill) || requiredSkill.includes(skill));
-    if (partialMatch) total += 0.5;
+    const partial = available.some(a => a.includes(req) || req.includes(a));
+    if (partial) points += 0.5;
   }
 
-  return Math.round((total / required.length) * 100);
+  return Math.round((points / required.length) * 100);
 };
 
-const normalizeDayList = (days = []) => {
-  if (!days) return [];
-  const list = Array.isArray(days) ? days : [days];
-  return [...new Set(list.map(day => String(day).trim()).filter(Boolean).map(day => day.toLowerCase()))];
-};
-
-export const computeLocationScore = (userLat, userLon, targetLocation = {}, maxDistance = 25) => {
-  if (Number.isFinite(Number(userLat)) && Number.isFinite(Number(userLon))) {
-    const targetLat = Number(targetLocation.latitude ?? targetLocation.lat);
-    const targetLon = Number(targetLocation.longitude ?? targetLocation.lon);
-
-    if (Number.isFinite(targetLat) && Number.isFinite(targetLon)) {
-      const distance = calculateDistance(userLat, userLon, targetLat, targetLon);
-      if (Number.isFinite(distance)) {
-        const safeMaxDistance = Number.isFinite(Number(maxDistance)) ? Math.max(Math.abs(Number(maxDistance)), 1) : 25;
-        return clamp(100 - (distance / safeMaxDistance) * 100, 0, 100);
-      }
+/**
+ * Location compatibility score  (0 – 100).
+ *
+ * Scoring:
+ *   Coordinate distance available:
+ *     score = clamp(100 − (distKm / maxDistKm) × 100, 0, 100)
+ *   Coordinate distance unavailable → text fallback (city/state/country).
+ *
+ * @param {object} customerLocation  { latitude, longitude, city?, state?, country? }
+ * @param {object} providerLocation  { latitude, longitude, city?, state?, country? }
+ * @param {number} maxDistKm
+ * @returns {number}
+ */
+export const computeLocationScore = (customerLocation, providerLocation, maxDistKm = DEFAULT_MAX_DISTANCE_KM) => {
+  if (isValidCoordPair(customerLocation) && isValidCoordPair(providerLocation)) {
+    const dist = getDistance(
+      customerLocation.latitude ?? customerLocation.lat,
+      customerLocation.longitude ?? customerLocation.lon,
+      providerLocation.latitude ?? providerLocation.lat,
+      providerLocation.longitude ?? providerLocation.lon,
+    );
+    if (dist !== null) {
+      const safeMax = Number.isFinite(maxDistKm) && maxDistKm > 0 ? maxDistKm : DEFAULT_MAX_DISTANCE_KM;
+      return clamp(Math.round(100 - (dist / safeMax) * 100));
     }
   }
-
-  const cityA = String(targetLocation.city || '').trim().toLowerCase();
-  const stateA = String(targetLocation.state || '').trim().toLowerCase();
-  const countryA = String(targetLocation.country || '').trim().toLowerCase();
-
-  const requestedCity = String(targetLocation.requestedCity || '').trim().toLowerCase();
-  const requestedState = String(targetLocation.requestedState || '').trim().toLowerCase();
-  const requestedCountry = String(targetLocation.requestedCountry || '').trim().toLowerCase();
-
-  if (requestedCity && cityA && requestedCity === cityA) return 100;
-  if (requestedState && stateA && requestedState === stateA) return 70;
-  if (requestedCountry && countryA && requestedCountry === countryA) return 40;
-
-  return 0;
+  // Coordinate fallback → text comparison
+  return textLocationScore(customerLocation, providerLocation);
 };
 
-export const computeAvailabilityScore = (requestedAvailability = [], actualAvailability = []) => {
-  const requestedDays = normalizeDayList(requestedAvailability);
-  const actualDays = normalizeDayList(actualAvailability);
+/**
+ * Availability compatibility score  (0 – 100).
+ *
+ * matchedDays / requestedDays × 100, integer.
+ *
+ * @param {string[]} requestedDays  Customer's required days
+ * @param {string[]} providerDays   Provider's available days
+ * @returns {number}
+ */
+export const computeAvailabilityScore = (requestedDays = [], providerDays = []) => {
+  const normDay = (d) => String(d || '').trim().toLowerCase();
 
-  if (!requestedDays.length) return 100;
-  if (!actualDays.length) return 0;
+  const required = (Array.isArray(requestedDays) ? requestedDays : [requestedDays])
+    .map(normDay).filter(Boolean);
+  const available = (Array.isArray(providerDays) ? providerDays : [providerDays])
+    .map(normDay).filter(Boolean);
 
-  const matched = requestedDays.filter(day => actualDays.includes(day));
-  return Math.round((matched.length / requestedDays.length) * 100);
+  if (!required.length)  return 100;  // no constraint
+  if (!available.length) return 0;    // provider has no listed availability
+
+  const matched = required.filter(d => available.includes(d));
+  return Math.round((matched.length / required.length) * 100);
 };
 
+/**
+ * Rating score  (0 – 100 when rating exists, null when unavailable).
+ *
+ * Converts a 0–5 star rating to a 0–100 score: (rating / 5) × 100.
+ * Returns null (not zero) if the rating value is null/undefined/NaN.
+ *
+ * @param {*} rating  Raw rating value from DB
+ * @returns {number|null}
+ */
 export const computeRatingScore = (rating) => {
-  const numericRating = Number(rating);
-  if (!Number.isFinite(numericRating)) return 0;
-  return clamp((numericRating / 5) * 100, 0, 100);
+  if (rating == null || rating === '') return null;
+  const n = Number(rating);
+  if (!Number.isFinite(n) || n < 0) return null;
+  return clamp(Math.round((n / 5) * 100));
 };
 
-const reasonText = (type, detail) => {
-  const map = {
-    skillMatch: 'Matches requested tailoring skills',
-    skillPartial: 'Partial match for requested skills',
-    skillMiss: 'No direct match for requested skills',
-    locationNear: `Located ${detail} km away`,
-    locationCity: 'Located in the requested city',
-    locationState: 'Located in the same state',
-    locationCountry: 'Located in the same country',
-    locationMiss: 'Location does not match requested city',
-    availabilityMatch: 'Available on requested days',
-    availabilityPartial: 'Partially available on requested days',
-    availabilityMissing: 'Availability details unavailable',
-    rating: `Rating ${detail}/5`,
-    ratingMissing: 'Rating unavailable'
-  };
+// ─── Match reason builders ─────────────────────────────────────────────────
 
-  return map[type] || detail;
-};
-
-export const buildMatchResult = (candidate = {}, requirement = {}) => {
-  const requestedSkills = requirement.skills || requirement.requestedSkills || [];
-  const requestedDays = requirement.availability?.days || requirement.requestedDays || [];
-  const userLat = Number(requirement.userLat ?? requirement.latitude ?? requirement.location?.latitude);
-  const userLon = Number(requirement.userLon ?? requirement.longitude ?? requirement.location?.longitude);
-  const maxDistance = Number(requirement.maxDistance ?? 25);
-
-  const candidateSkills = candidate.skills || candidate.serviceSkills || [];
-  const candidateDays = candidate.availability?.days || candidate.availableDays || [];
-
-  const skill = computeSkillScore(requestedSkills, candidateSkills);
-  const targetLocation = candidate.location || candidate.serviceLocation || {};
-  const location = Number.isFinite(userLat) && Number.isFinite(userLon)
-    ? computeLocationScore(userLat, userLon, {
-        ...targetLocation,
-        requestedCity: requirement.city || requirement.location?.city,
-        requestedState: requirement.state || requirement.location?.state,
-        requestedCountry: requirement.country || requirement.location?.country
-      }, maxDistance)
-    : computeLocationScore(null, null, {
-        ...targetLocation,
-        requestedCity: requirement.city || requirement.location?.city,
-        requestedState: requirement.state || requirement.location?.state,
-        requestedCountry: requirement.country || requirement.location?.country
-      }, maxDistance);
-
-  const availability = computeAvailabilityScore(requestedDays, candidateDays);
-  const ratingValue = Number(candidate.rating ?? 0);
-  const rating = Number.isFinite(ratingValue) && ratingValue > 0 ? computeRatingScore(ratingValue) : 0;
-
-  const overall = (skill * 0.5) + (location * 0.25) + (availability * 0.15) + (rating * 0.1);
-
+/**
+ * Build deterministic human-readable reasons from component scores.
+ *
+ * @param {object} scores   { skill, location, availability, rating }
+ * @param {object} context  { hasCoords, distanceKm, city, requestedDays }
+ * @returns {string[]}
+ */
+const buildReasons = (scores, context) => {
   const reasons = [];
-  if (skill >= 80) reasons.push(reasonText('skillMatch'));
-  else if (skill > 0) reasons.push(reasonText('skillPartial'));
-  else reasons.push(reasonText('skillMiss'));
 
-  if (Number.isFinite(userLat) && Number.isFinite(userLon)) {
-    const targetLat = Number(targetLocation.latitude ?? targetLocation.lat);
-    const targetLon = Number(targetLocation.longitude ?? targetLocation.lon);
-    if (Number.isFinite(targetLat) && Number.isFinite(targetLon)) {
-      const distance = calculateDistance(userLat, userLon, targetLat, targetLon);
-      reasons.push(distance == null ? reasonText('locationMiss') : reasonText('locationNear', String(distance)));
+  // ── Skill reasons ──
+  if (scores.skill >= 90) {
+    reasons.push('Strong skill compatibility — matches all requested skills');
+  } else if (scores.skill >= 60) {
+    reasons.push('Good skill match for most requested skills');
+  } else if (scores.skill > 0) {
+    reasons.push('Limited skill overlap with requested skills');
+  } else {
+    reasons.push('No direct match for the requested skills');
+  }
+
+  // ── Location reasons ──
+  if (context.hasCoords && context.distanceKm != null) {
+    if (context.distanceKm === 0) {
+      reasons.push('Same location as you');
+    } else if (scores.location >= 80) {
+      reasons.push(`Located nearby — ${context.distanceKm} km away`);
+    } else if (scores.location >= 40) {
+      reasons.push(`Located ${context.distanceKm} km away`);
     } else {
-      reasons.push(reasonText('locationMiss'));
+      reasons.push(`Located ${context.distanceKm} km away — outside preferred range`);
     }
+  } else if (scores.location >= 100) {
+    reasons.push(`Located in ${context.city || 'the requested city'}`);
+  } else if (scores.location >= 70) {
+    reasons.push('Located in the same state');
+  } else if (scores.location >= 40) {
+    reasons.push('Located in the same country');
   } else {
-    const requestedCity = requirement.city || requirement.location?.city;
-    if (requestedCity && String(targetLocation.city || '').trim().toLowerCase() === String(requestedCity).trim().toLowerCase()) {
-      reasons.push(reasonText('locationCity'));
-    } else {
-      reasons.push(reasonText('locationMiss'));
-    }
+    reasons.push('Location information unavailable or outside requested area');
   }
 
-  if (requestedDays.length) {
-    if (availability >= 80) reasons.push(reasonText('availabilityMatch'));
-    else if (availability > 0) reasons.push(reasonText('availabilityPartial'));
-    else reasons.push(reasonText('availabilityMissing'));
+  // ── Availability reasons ──
+  if (!context.requestedDays || context.requestedDays.length === 0) {
+    // No availability constraint requested — no negative reason needed
+  } else if (scores.availability >= 100) {
+    reasons.push('Fully available on all requested days');
+  } else if (scores.availability >= 50) {
+    reasons.push('Available on some of the requested days');
+  } else if (scores.availability > 0) {
+    reasons.push('Availability only partially matches requested schedule');
   } else {
-    reasons.push(reasonText('availabilityMatch'));
+    reasons.push('Not available on the requested days');
   }
 
-  if (Number.isFinite(ratingValue) && ratingValue > 0) {
-    reasons.push(reasonText('rating', String(Number(ratingValue).toFixed(1))));
+  // ── Rating reasons ──
+  if (scores.rating === null) {
+    reasons.push('Rating information unavailable');
+  } else if (scores.rating >= 90) {
+    reasons.push(`Highly rated provider — ${Math.round((scores.rating / 100) * 5 * 10) / 10}/5 stars`);
+  } else if (scores.rating >= 60) {
+    reasons.push(`Good provider rating`);
   } else {
-    reasons.push(reasonText('ratingMissing'));
+    reasons.push(`Provider has a rating on record`);
   }
+
+  return reasons;
+};
+
+// ─── Main match builder ────────────────────────────────────────────────────
+
+/**
+ * Calculate the full match result for a single provider against a requirement.
+ *
+ * @param {object} provider     Provider document (from DB, select -password)
+ * @param {object} requirement  { skills[], location: {latitude,longitude,city?},
+ *                                availability: [], maxDistanceKm? }
+ * @returns {object}  Match result shaped per the Phase 6 API spec
+ */
+export const buildMatchResult = (provider, requirement = {}) => {
+  const reqSkills       = requirement.skills        || [];
+  const reqLocation     = requirement.location      || {};
+  const reqDays         = requirement.availability  || [];
+  const maxDistKm       = Number(requirement.maxDistanceKm) > 0
+    ? Number(requirement.maxDistanceKm)
+    : DEFAULT_MAX_DISTANCE_KM;
+
+  // Provider's fields (User model shape)
+  const providerSkills   = provider.skills        || [];           // [{name, ...}]
+  const providerLocation = provider.location      || {};           // {city,state,country,latitude,longitude}
+  const providerDays     = provider.availability?.days || [];     // string[]
+  const rawRating        = provider.rating;                        // number|null|undefined
+
+  // ── Component scores ──
+  const skillScore        = computeSkillScore(reqSkills, providerSkills);
+  const locationScore     = computeLocationScore(reqLocation, providerLocation, maxDistKm);
+  const availabilityScore = computeAvailabilityScore(reqDays, providerDays);
+  const ratingScore       = computeRatingScore(rawRating);
+
+  // ── Weighted total ──
+  // If rating is unavailable (null) use the re-normalised weights.
+  let matchScore;
+  if (ratingScore === null) {
+    matchScore =
+      skillScore        * WEIGHTS_NO_RATING.skill        +
+      locationScore     * WEIGHTS_NO_RATING.location     +
+      availabilityScore * WEIGHTS_NO_RATING.availability;
+  } else {
+    matchScore =
+      skillScore        * WEIGHTS.skill        +
+      locationScore     * WEIGHTS.location     +
+      availabilityScore * WEIGHTS.availability +
+      ratingScore       * WEIGHTS.rating;
+  }
+
+  // Round to nearest integer for display
+  const finalScore = Math.round(matchScore);
+
+  // ── Reason context ──
+  let distanceKm = null;
+  let hasCoords  = false;
+  if (isValidCoordPair(reqLocation) && isValidCoordPair(providerLocation)) {
+    hasCoords  = true;
+    distanceKm = getDistance(
+      reqLocation.latitude  ?? reqLocation.lat,
+      reqLocation.longitude ?? reqLocation.lon,
+      providerLocation.latitude,
+      providerLocation.longitude,
+    );
+  }
+
+  const reasons = buildReasons(
+    { skill: skillScore, location: locationScore, availability: availabilityScore, rating: ratingScore },
+    {
+      hasCoords,
+      distanceKm,
+      city:          providerLocation.city || null,
+      requestedDays: reqDays,
+    },
+  );
 
   return {
-    id: candidate._id || candidate.id || candidate.providerId || candidate.serviceId,
-    name: candidate.name || candidate.title || 'Candidate',
-    matchScore: Number(overall.toFixed(2)),
-    skill,
-    location,
-    availability,
-    rating,
-    reasons
+    providerId: String(provider._id),
+    matchScore:  finalScore,
+    breakdown: {
+      skill:        skillScore,
+      location:     locationScore,
+      availability: availabilityScore,
+      rating:       ratingScore,        // null when unavailable — never fabricated
+    },
+    reasons,
+    // Attach safe public provider fields for the client
+    provider: {
+      _id:          provider._id,
+      name:         provider.name,
+      bio:          provider.bio         || '',
+      profileImage: provider.profileImage || '',
+      skills:       provider.skills      || [],
+      languages:    provider.languages   || [],
+      location: {
+        city:      providerLocation.city      || '',
+        state:     providerLocation.state     || '',
+        country:   providerLocation.country   || '',
+        // Coordinates intentionally omitted from response — not needed by UI
+      },
+      availability: {
+        days:            providerDays,
+        timePreferences: provider.availability?.timePreferences || [],
+      },
+      rating:       rawRating != null && Number.isFinite(Number(rawRating)) && Number(rawRating) >= 0
+        ? Number(rawRating)
+        : null,
+      age:          provider.age || null,
+      distanceKm,   // null when coords unavailable — never fabricated
+    },
   };
 };
 
+// ─── Ranking ───────────────────────────────────────────────────────────────
+
+/**
+ * Score and rank an array of provider documents against a requirement.
+ *
+ * Sort order (deterministic):
+ *   1. matchScore DESC
+ *   2. rating DESC (providers with rating beat un-rated at equal score)
+ *   3. name ASC (alphabetical tie-breaker)
+ *
+ * @param {object[]} providers
+ * @param {object}   requirement
+ * @returns {object[]}  Sorted array of match results
+ */
+export const rankProviders = (providers = [], requirement = {}) => {
+  return providers
+    .map(p => buildMatchResult(p, requirement))
+    .sort((a, b) => {
+      if (b.matchScore !== a.matchScore) return b.matchScore - a.matchScore;
+      // Secondary: higher rating first (null rating sorts lower)
+      const ra = a.provider.rating ?? -1;
+      const rb = b.provider.rating ?? -1;
+      if (rb !== ra) return rb - ra;
+      // Tertiary: name ascending
+      return String(a.provider.name || '').localeCompare(String(b.provider.name || ''));
+    });
+};
+
+// ─── Legacy compatibility export ───────────────────────────────────────────
+// The existing matchingController.js imports { rankMatches } from this file.
+// Keep that export alive so the existing POST /api/matching/ endpoint is not broken.
+
+export { normaliseSkills as normalizeSkills };
+
+/**
+ * @deprecated  Use rankProviders() for the Phase 6 provider-matching API.
+ *              This export preserves backwards compatibility with the existing
+ *              generic POST /api/matching endpoint.
+ */
 export const rankMatches = (candidates = [], requirement = {}) => {
+  // The old API passed arbitrary candidate objects (not User documents).
+  // Re-use buildMatchResult but read skills as either string[] or {name}[].
   return candidates
-    .map(candidate => buildMatchResult(candidate, requirement))
+    .map(candidate => {
+      // Adapt old candidate shape to the User model shape expected by buildMatchResult
+      const adapted = {
+        _id:          candidate._id || candidate.id || candidate.providerId || 'unknown',
+        name:         candidate.name   || candidate.title || 'Candidate',
+        skills:       candidate.skills || [],
+        location:     candidate.location || candidate.serviceLocation || {},
+        availability: candidate.availability || { days: candidate.availableDays || [] },
+        rating:       candidate.rating ?? null,
+      };
+      const result = buildMatchResult(adapted, requirement);
+      // Return in the old shape for backwards compat
+      return {
+        id:           result.providerId,
+        name:         result.provider.name,
+        matchScore:   result.matchScore,
+        skill:        result.breakdown.skill,
+        location:     result.breakdown.location,
+        availability: result.breakdown.availability,
+        rating:       result.breakdown.rating,
+        reasons:      result.reasons,
+      };
+    })
     .sort((a, b) => {
       if (b.matchScore !== a.matchScore) return b.matchScore - a.matchScore;
       return String(a.id || '').localeCompare(String(b.id || ''));
     });
 };
 
-export const calculateMatchScore = (candidate, requirement = {}) => {
-  return rankMatches([candidate], requirement)[0] || null;
-};
+export const calculateMatchScore = (candidate, requirement = {}) =>
+  rankMatches([candidate], requirement)[0] || null;
