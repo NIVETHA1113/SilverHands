@@ -67,7 +67,9 @@ export default function ExplorePage() {
   const [providerSkill,          setProviderSkill]          = useState('');
 
   // ── UI state ──────────────────────────────────────────────────────────
-  const [showMobileFilter, setShowMobileFilter] = useState(false);
+  // showFilters: controls the filter sidebar on ALL screen sizes.
+  // Defaults to true so filters are visible on first load.
+  const [showFilters, setShowFilters] = useState(true);
 
   // ── Phase 6 matching state (providers tab only, non-breaking) ─────────
   const [showMatchPanel,  setShowMatchPanel]  = useState(false);
@@ -191,8 +193,7 @@ export default function ExplorePage() {
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     setCurrentPage(1);
-    setShowMobileFilter(false);
-    // reset sort to default for that tab
+    // keep filter panel state as-is when switching tabs
     setSortBy('relevance');
     pushUrlParams({ tab, page: '1' });
   };
@@ -469,13 +470,14 @@ export default function ExplorePage() {
           {/* Search bar */}
           <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row gap-3 pt-2">
             <div className="relative flex-1">
-              <Search className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+              <Search className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
                 placeholder="What are you looking for? (e.g. Tailoring, Cooking, Mango Pickle, Math Tutor)"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="input-editorial pl-12 text-base py-3.5 w-full"
+                className="input-editorial w-full text-base"
+                style={{ paddingLeft: '3rem', paddingRight: searchQuery ? '2.5rem' : '1rem' }}
               />
               {searchQuery && (
                 <button type="button" onClick={() => { setSearchQuery(''); setCurrentPage(1); }}
@@ -525,11 +527,11 @@ export default function ExplorePage() {
             ))}
           </div>
 
-          {/* Mobile filter toggle */}
-          <button onClick={() => setShowMobileFilter(v => !v)}
-            className="md:hidden btn-secondary text-xs py-2 px-3 flex items-center gap-1.5">
+          {/* Filter toggle — visible on ALL screen sizes */}
+          <button onClick={() => setShowFilters(v => !v)}
+            className="btn-secondary text-xs py-2 px-3 flex items-center gap-1.5">
             <Filter className="w-3.5 h-3.5" />
-            {showMobileFilter ? 'Hide' : 'Show'} Filters
+            {showFilters ? 'Hide Filters' : 'Show Filters'}
             {hasActiveFilters && (
               <span className="ml-1 bg-[#16382B] text-white rounded-full w-4 h-4 text-[10px] flex items-center justify-center">
                 !
@@ -538,23 +540,18 @@ export default function ExplorePage() {
           </button>
         </div>
 
-        {/* ── MOBILE FILTER DRAWER ── */}
-        {showMobileFilter && (
-          <div className="md:hidden bg-white p-5 rounded-2xl border border-[#E2E7E3]">
-            <FilterPanel />
-          </div>
-        )}
-
         {/* ── MAIN CONTENT: sidebar + results ── */}
         <div className="flex gap-6 items-start">
 
-          {/* Desktop sidebar (always visible on md+) */}
-          <aside className="hidden md:block w-64 shrink-0 bg-white p-5 rounded-2xl border border-[#E2E7E3] sticky top-6">
-            <h3 className="text-sm font-bold text-[#16382B] mb-5 flex items-center gap-2">
-              <Filter className="w-4 h-4" /> Filters &amp; Sort
-            </h3>
-            <FilterPanel />
-          </aside>
+          {/* Filter sidebar — toggled by showFilters on ALL screen sizes */}
+          {showFilters && (
+            <aside className="w-64 shrink-0 bg-white p-5 rounded-2xl border border-[#E2E7E3] sticky top-6 self-start">
+              <h3 className="text-sm font-bold text-[#16382B] mb-5 flex items-center gap-2">
+                <Filter className="w-4 h-4" /> Filters &amp; Sort
+              </h3>
+              <FilterPanel />
+            </aside>
+          )}
 
           {/* Results column */}
           <div className="flex-1 min-w-0 space-y-5">
