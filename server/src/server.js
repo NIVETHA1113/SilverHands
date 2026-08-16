@@ -13,6 +13,7 @@ import matchingRoutes from './routes/matchingRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
 import searchRoutes from './routes/searchRoutes.js';
 import chatbotRoutes from './routes/chatbotRoutes.js';
+import providerDashboardRoutes from './routes/providerDashboardRoutes.js';
 
 dotenv.config();
 
@@ -40,6 +41,7 @@ app.use('/api/matching', matchingRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/chatbot', chatbotRoutes);
+app.use('/api/providers', providerDashboardRoutes);
 app.use('/api/users', reviewRoutes); // mounts /api/users/:id/reviews & /api/users/:id/trust
 
 // Health Check Route

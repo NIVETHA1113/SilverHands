@@ -13,6 +13,7 @@ import ServicesListPage from './pages/provider/ServicesListPage';
 import ServiceFormPage from './pages/provider/ServiceFormPage';
 import ProductsListPage from './pages/provider/ProductsListPage';
 import ProductFormPage from './pages/provider/ProductFormPage';
+import ProviderLivelihoodDashboardPage from './pages/provider/ProviderLivelihoodDashboardPage';
 
 // Phase 4 Public Discovery Pages
 import ExplorePage from './pages/ExplorePage';
@@ -53,7 +54,7 @@ export default function App() {
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/login" element={<LoginPage />} />
               
-              {/* Protected Dashboard Route (Shared) */}
+              {/* Protected Dashboard Route (Shared / Role Switcher) */}
               <Route
                 path="/dashboard"
                 element={
@@ -64,6 +65,14 @@ export default function App() {
               />
 
               {/* Provider ONLY Routes */}
+              <Route
+                path="/provider/dashboard"
+                element={
+                  <ProtectedRoute allowedRoles={['provider']}>
+                    <ProviderLivelihoodDashboardPage />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/onboarding"
                 element={
