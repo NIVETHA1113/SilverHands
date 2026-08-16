@@ -20,6 +20,15 @@ import ServiceDetailPage from './pages/ServiceDetailPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import PublicProviderProfilePage from './pages/PublicProviderProfilePage';
 
+// Task 3 — Opportunities + Applications + Trust
+import OpportunitiesListPage from './pages/opportunities/OpportunitiesListPage';
+import OpportunityDetailPage from './pages/opportunities/OpportunityDetailPage';
+import OpportunityCreatePage from './pages/opportunities/OpportunityCreatePage';
+import MyOpportunitiesPage from './pages/opportunities/MyOpportunitiesPage';
+import MyApplicationsPage from './pages/opportunities/MyApplicationsPage';
+import MyAcceptedServicesPage from './pages/opportunities/MyAcceptedServicesPage';
+import ReviewPage from './pages/opportunities/ReviewPage';
+
 export default function App() {
   return (
     <AuthProvider>
@@ -105,6 +114,57 @@ export default function App() {
                 element={
                   <ProtectedRoute>
                     <ProductFormPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* ── Task 3: Opportunities + Applications + Trust ── */}
+              {/* Public opportunity browsing */}
+              <Route path="/opportunities" element={<OpportunitiesListPage />} />
+              <Route path="/opportunities/:id" element={<OpportunityDetailPage />} />
+
+              {/* Protected: customer creates & manages */}
+              <Route
+                path="/opportunities/create"
+                element={
+                  <ProtectedRoute>
+                    <OpportunityCreatePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/opportunities/my"
+                element={
+                  <ProtectedRoute>
+                    <MyOpportunitiesPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Protected: provider tracks own applications */}
+              <Route
+                path="/applications/my"
+                element={
+                  <ProtectedRoute>
+                    <MyApplicationsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/applications/accepted"
+                element={
+                  <ProtectedRoute>
+                    <MyAcceptedServicesPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Protected: customer leaves review after completion */}
+              <Route
+                path="/applications/:applicationId/review"
+                element={
+                  <ProtectedRoute>
+                    <ReviewPage />
                   </ProtectedRoute>
                 }
               />

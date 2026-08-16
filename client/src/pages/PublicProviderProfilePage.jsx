@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, MapPin, Star, ShieldCheck, Briefcase, Package, Languages, Calendar, Award, ArrowRight } from 'lucide-react';
-import api from '../services/api';
+import { ArrowLeft, MapPin, Star, ShieldCheck, Briefcase, Package, Languages, Calendar, Award, ArrowRight, CheckCircle2, User } from 'lucide-react';
+import api, { reviewAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function PublicProviderProfilePage() {
@@ -12,6 +12,8 @@ export default function PublicProviderProfilePage() {
   const [provider, setProvider] = useState(null);
   const [services, setServices] = useState([]);
   const [products, setProducts] = useState([]);
+  const [trust, setTrust] = useState(null);
+  const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -24,6 +26,18 @@ export default function PublicProviderProfilePage() {
           setProvider(res.data.provider);
           setServices(res.data.services || []);
           setProducts(res.data.products || []);
+
+          // Fetch trust stats and reviews
+          try {
+            const [trustRes, reviewsRes] = await Promise.all([
+              reviewAPI.getProviderTrust(id),
+              reviewAPI.getProviderReviews(id)
+            ]);
+            if (trustRes.data.success) setTrust(trustRes.data.trust);
+            if (reviewsRes.data.success) setReviews(reviewsRes.data.reviews || []);
+          } catch (err) {
+            console.error('[Trust fetch error]:', err.message);
+          }
         }
       } catch (err) {
         setError(err.message || 'Could not load provider profile.');
@@ -90,7 +104,8 @@ export default function PublicProviderProfilePage() {
                 <span>Age {provider.age || 62}</span>
                 <span>•</span>
                 <span className="text-[#C07A46] font-bold flex items-center gap-1">
-                  <Star className="w-4 h-4 fill-current" /> {provider.rating || 4.8} Trusted Provider
+                  <Star className="w-4 h-4 fill-current" /> {trust && trust.totalReviews > 0 ? trust.avgRating : (provider.rating || 4.8)} Trusted Provider
+                  {trust && trust.totalReviews > 0 && ` (${trust.totalReviews} reviews)`}
                 </span>
               </div>
 
@@ -217,6 +232,125 @@ export default function PublicProviderProfilePage() {
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Trust & Reviews Section */}
+          <div className="space-y-6 pt-4 border-t border-[#E2E7E3]">
+            <h2 className="font-editorial text-2xl font-bold text-[#16382B] flex items-center gap-2">
+              <Star className="w-5 h-5 text-[#C07A46] fill-[#C07A46]" /> Community Trust & Reviews
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Trust Summary Card */}
+              <div className="bg-white p-6 rounded-3xl border border-[#E2E7E3] space-y-4 shadow-xs">
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Overall Trust</h3>
+                <div className="flex items-baseline gap-2">
+                  <span className="font-editorial text-5xl font-bold text-[#16382B]">
+                    {trust && trust.totalReviews > 0 ? trust.avgRating : (provider.rating || 4.8)}
+                  </span>
+                  <span className="text-sm font-semibold text-slate-500">out of 5</span>
+                </div>
+                <div className="flex gap-1 text-[#C07A46]">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <Star
+                      key={s}
+                      className={`w-5 h-5 ${
+                        s <= Math.round(trust && trust.totalReviews > 0 ? trust.avgRating : (provider.rating || 4.8))
+                          ? 'fill-current'
+                          : 'text-slate-200'
+                      }`}
+                    />
+                  ))}
+                </div>
+                <p className="text-xs text-slate-500">
+                  Based on {trust ? trust.totalReviews : 0} verified customer reviews.
+                </p>
+                <div className="pt-3 border-t border-[#F0F4F1] flex items-center gap-2 text-xs font-semibold text-[#16382B]">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span>{trust ? trust.completedJobs : 0} completed opportunities</span>
+                </div>
+              </div>
+
+              {/* Rating Distribution Card */}
+              <div className="bg-white p-6 rounded-3xl border border-[#E2E7E3] space-y-3 shadow-xs md:col-span-2">
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Rating Distribution</h3>
+                <div className="space-y-2">
+                  {[5, 4, 3, 2, 1].map((stars) => {
+                    const count = trust?.ratingDistribution?.[stars] || 0;
+                    const pct = trust?.totalReviews > 0 ? (count / trust.totalReviews) * 100 : 0;
+                    return (
+                      <div key={stars} className="flex items-center gap-3 text-xs font-semibold text-slate-600">
+                        <span className="w-3 text-right">{stars}</span>
+                        <Star className="w-3.5 h-3.5 fill-[#C07A46] text-[#C07A46] shrink-0" />
+                        <div className="flex-1 h-2 bg-[#F5F5F0] rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-[#16382B] rounded-full"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                        <span className="w-6 text-right text-slate-400">{count}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Individual Reviews */}
+            <div className="space-y-4">
+              <h3 className="font-editorial text-xl font-bold text-[#16382B]">
+                Customer Reviews ({reviews.length})
+              </h3>
+
+              {reviews.length === 0 ? (
+                <p className="text-slate-500 text-sm italic bg-white p-6 rounded-2xl border border-[#E2E7E3]">
+                  No reviews left yet for this provider.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {reviews.map((r) => (
+                    <div key={r._id} className="bg-white p-5 rounded-2xl border border-[#E2E7E3] space-y-3 shadow-xs">
+                      <div className="flex items-start justify-between gap-3 flex-wrap">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-[#E6ECE7] flex items-center justify-center text-[#16382B] font-bold text-xs uppercase overflow-hidden">
+                            {r.customerId?.profileImage ? (
+                              <img
+                                src={r.customerId.profileImage}
+                                alt={r.customerId.name}
+                                className="w-full h-full rounded-full object-cover"
+                              />
+                            ) : (
+                              <User className="w-4 h-4" />
+                            )}
+                          </div>
+                          <div>
+                            <span className="font-bold text-sm text-[#16382B]">{r.customerId?.name}</span>
+                            <span className="text-[10px] text-slate-400 block">
+                              {new Date(r.createdAt).toLocaleDateString('en-IN', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                              })}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex gap-0.5 text-[#C07A46]">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              className={`w-3.5 h-3.5 ${
+                                star <= r.rating ? 'fill-current' : 'text-slate-200'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      <p className="text-slate-600 text-sm italic">"{r.comment}"</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
         </div>
