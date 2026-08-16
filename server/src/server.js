@@ -10,6 +10,8 @@ import aiRoutes from './routes/aiRoutes.js';
 import searchRoutes from './routes/searchRoutes.js';
 
 dotenv.config();
+console.log('[DEBUG] MongoDB URI loaded:', process.env.MONGODB_URI ? 'YES' : 'NO');
+console.log('[DEBUG] MongoDB URI type:', process.env.MONGODB_URI?.startsWith('mongodb+srv://') ? 'ATLAS' : 'LOCAL/UNKNOWN');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
