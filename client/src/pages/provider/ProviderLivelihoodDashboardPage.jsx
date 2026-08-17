@@ -22,7 +22,8 @@ import {
   AlertCircle,
   Activity,
   Layers,
-  Search
+  Search,
+  Bot
 } from 'lucide-react';
 
 export default function ProviderLivelihoodDashboardPage() {
@@ -107,7 +108,33 @@ export default function ProviderLivelihoodDashboardPage() {
           aiSummary={aiSummary}
         />
 
-        {/* ── 2. AI-POWERED GROWTH INSIGHT ── */}
+        {/* ── 2. SILVERHANDS COPILOT ENTRY WIDGET ── */}
+        <div className="bg-gradient-to-r from-emerald-950 via-[#16382B] to-emerald-900 text-white p-5 sm:p-6 rounded-3xl border border-emerald-700/80 shadow-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex items-start gap-3.5">
+            <div className="w-10 h-10 rounded-2xl bg-amber-400/20 border border-amber-300/40 flex items-center justify-center shrink-0 mt-0.5">
+              <Bot className="w-6 h-6 text-amber-300 animate-pulse" />
+            </div>
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <span className="font-editorial text-lg font-bold text-white">SilverHands Copilot</span>
+                <span className="bg-amber-400/20 text-amber-300 border border-amber-300/30 text-[9px] font-bold py-0.5 px-2 rounded-full uppercase">AI Livelihood Advisor</span>
+              </div>
+              <p className="text-xs text-emerald-100/90 font-medium">
+                Ask Copilot for your personalized <strong className="text-amber-200">Next Best Action</strong> or opportunity guidance.
+              </p>
+            </div>
+          </div>
+
+          <Link
+            to="/opportunities"
+            className="btn-primary py-2.5 px-5 text-xs bg-amber-400 text-[#16382B] hover:bg-amber-300 font-bold shrink-0 shadow-md flex items-center gap-1.5"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Explore Opportunities</span>
+          </Link>
+        </div>
+
+        {/* ── 3. AI-POWERED GROWTH INSIGHT ── */}
         <div className="bg-gradient-to-r from-emerald-900 to-[#16382B] text-white p-5 rounded-3xl border border-emerald-800 shadow-md flex items-start gap-4">
           <div className="w-10 h-10 rounded-2xl bg-emerald-800/80 border border-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
             <Sparkles className="w-5 h-5 text-emerald-300 animate-pulse" />
@@ -122,7 +149,7 @@ export default function ProviderLivelihoodDashboardPage() {
           </div>
         </div>
 
-        {/* ── 3. LIVELIHOOD SCORE & BREAKDOWN ── */}
+        {/* ── 4. LIVELIHOOD SCORE & BREAKDOWN ── */}
         <div className="bg-white p-6 sm:p-8 rounded-3xl border border-[#E2E7E3] shadow-xs space-y-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[#E2E7E3] pb-4">
             <div>
@@ -213,10 +240,10 @@ export default function ProviderLivelihoodDashboardPage() {
           </div>
         </div>
 
-        {/* ── 4. AI SKILL GAP → OPPORTUNITY UNLOCK SECTION ── */}
+        {/* ── 5. AI SKILL GAP → OPPORTUNITY UNLOCK SECTION ── */}
         <SkillGapSection />
 
-        {/* ── 5. PROFILE COMPLETENESS & SKILLS ROW ── */}
+        {/* ── 6. PROFILE COMPLETENESS & SKILLS ROW ── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           
           {/* Profile Completeness Checklist */}
@@ -283,7 +310,7 @@ export default function ProviderLivelihoodDashboardPage() {
 
         </div>
 
-        {/* ── 6. SERVICES & PRODUCTS OVERVIEW ── */}
+        {/* ── 7. SERVICES & PRODUCTS OVERVIEW ── */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           
           {/* Services Card */}
@@ -370,7 +397,7 @@ export default function ProviderLivelihoodDashboardPage() {
 
         </div>
 
-        {/* ── 7. OPPORTUNITIES FOR YOU ── */}
+        {/* ── 8. OPPORTUNITIES FOR YOU ── */}
         <div className="bg-white p-6 sm:p-8 rounded-3xl border border-[#E2E7E3] shadow-xs space-y-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[#E2E7E3] pb-4">
             <div>
@@ -422,7 +449,7 @@ export default function ProviderLivelihoodDashboardPage() {
           )}
         </div>
 
-        {/* ── 8. APPLICATION BREAKDOWN & ESTIMATED WORK VALUE ── */}
+        {/* ── 9. APPLICATION BREAKDOWN & ESTIMATED WORK VALUE ── */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
           {/* Applications Status Breakdown (2 Columns) */}
@@ -487,7 +514,7 @@ export default function ProviderLivelihoodDashboardPage() {
 
         </div>
 
-        {/* ── 9. GROWTH SUGGESTIONS & RECENT ACTIVITY ── */}
+        {/* ── 10. GROWTH SUGGESTIONS & RECENT ACTIVITY ── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           
           {/* Growth Suggestions */}
@@ -555,7 +582,7 @@ export default function ProviderLivelihoodDashboardPage() {
 
         </div>
 
-        {/* ── 10. QUICK ACTIONS TOOLBAR ── */}
+        {/* ── 11. QUICK ACTIONS TOOLBAR ── */}
         <div className="bg-white p-6 rounded-3xl border border-[#E2E7E3] shadow-xs space-y-4">
           <h3 className="font-editorial text-xl font-bold text-[#16382B]">Quick Actions</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">

@@ -48,6 +48,34 @@ export const protect = async (req, res, next) => {
   }
 };
 
+// Optional Auth Middleware (Attaches req.user if token is valid, but does not block if unauthenticated)
+export const optionalProtect = async (req, res, next) => {
+  let token;
+
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith('Bearer')
+  ) {
+    try {
+      token = req.headers.authorization.split(' ')[1];
+      const decoded = jwt.verify(
+        token,
+        process.env.JWT_SECRET || 'silverhands_super_secret_jwt_key_2026_hackathon'
+      );
+
+      if (isDbConnected) {
+        req.user = await User.findById(decoded.id).select('-password');
+      } else {
+        req.user = { id: decoded.id, _id: decoded.id, role: decoded.role };
+      }
+    } catch (error) {
+      console.warn('[Optional Auth Warning]:', error.message);
+    }
+  }
+
+  next();
+};
+
 // Role Authorization Middleware
 export const authorizeRoles = (...allowedRoles) => {
   return (req, res, next) => {

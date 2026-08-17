@@ -1,27 +1,45 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Bot, X, Sparkles, RefreshCw, MessageSquare } from 'lucide-react';
+import { Bot, X, Sparkles, RefreshCw, MessageSquare, Compass, Award } from 'lucide-react';
 import api from '../../services/api';
 import ChatMessage from './ChatMessage';
 import ChatbotInput from './ChatbotInput';
+import { useAuth } from '../../contexts/AuthContext';
 
-const DEFAULT_SUGGESTIONS = [
+const CUSTOMER_SUGGESTIONS = [
   'Find a math tutor in Chennai',
   'I need traditional blouse stitching',
   'Show me homemade pickles',
   'How does matching work?'
 ];
 
+const PROVIDER_SUGGESTIONS = [
+  "🚀 What's my next best action?",
+  '🎯 Find my best opportunities',
+  '🧠 What skill should I learn?',
+  '✨ How can I improve my profile?',
+  '🔓 Show my skill gaps',
+  '📊 How am I doing on SilverHands?'
+];
+
 export default function Chatbot() {
+  const { user } = useAuth();
+  const isProvider = user?.role === 'provider';
+
   const [isOpen, setIsOpen] = useState(false);
+
+  // Dynamic Initial Welcome Message
   const [messages, setMessages] = useState([
     {
       sender: 'bot',
-      text: "👋 Hi! I'm your SilverHands Assistant. How can I help you find services, products, or providers today?",
-      suggestions: DEFAULT_SUGGESTIONS
+      text: isProvider
+        ? "👋 Hi! I'm your SilverHands Copilot. I can help you understand your opportunities, identify skill gaps, and decide what to do next."
+        : "👋 Hi! I'm your SilverHands Assistant. How can I help you find services, products, or providers today?",
+      suggestions: isProvider ? PROVIDER_SUGGESTIONS : CUSTOMER_SUGGESTIONS
     }
   ]);
+
   const [loading, setLoading] = useState(false);
-  const [suggestions, setSuggestions] = useState(DEFAULT_SUGGESTIONS);
+  const [suggestions, setSuggestions] = useState(isProvider ? PROVIDER_SUGGESTIONS : CUSTOMER_SUGGESTIONS);
 
   const messagesEndRef = useRef(null);
 
@@ -35,16 +53,28 @@ export default function Chatbot() {
     }
   }, [messages, isOpen]);
 
+  // Update suggestions when auth role changes
+  useEffect(() => {
+    if (isProvider) {
+      setSuggestions(PROVIDER_SUGGESTIONS);
+    } else {
+      setSuggestions(CUSTOMER_SUGGESTIONS);
+    }
+  }, [isProvider]);
+
   const handleSendMessage = async (userText) => {
     if (!userText || loading) return;
 
-    // Add user message to state
     const userMsg = { sender: 'user', text: userText };
     setMessages(prev => [...prev, userMsg]);
     setLoading(true);
 
     try {
-      const res = await api.post('/chatbot/message', { message: userText });
+      const res = await api.post('/chatbot/message', {
+        message: userText,
+        userContext: user ? { userId: user._id || user.id, role: user.role } : null
+      });
+
       if (res.data.success) {
         const botMsg = {
           sender: 'bot',
@@ -53,7 +83,7 @@ export default function Chatbot() {
           resultType: res.data.resultType,
           results: res.data.results || [],
           action: res.data.action || null,
-          suggestions: res.data.suggestions || []
+          suggestions: res.data.suggestions || (isProvider ? PROVIDER_SUGGESTIONS : CUSTOMER_SUGGESTIONS)
         };
         setMessages(prev => [...prev, botMsg]);
         if (res.data.suggestions && res.data.suggestions.length > 0) {
@@ -66,8 +96,8 @@ export default function Chatbot() {
         ...prev,
         {
           sender: 'bot',
-          text: "I'm having trouble connecting right now. Please try again or explore our marketplace directly.",
-          suggestions: DEFAULT_SUGGESTIONS
+          text: "I'm having trouble connecting right now. Please try again or explore our platform directly.",
+          suggestions: isProvider ? PROVIDER_SUGGESTIONS : CUSTOMER_SUGGESTIONS
         }
       ]);
     } finally {
@@ -87,12 +117,15 @@ export default function Chatbot() {
           <div className="w-8 h-8 rounded-full bg-emerald-800/60 flex items-center justify-center">
             <Bot className="w-5 h-5 text-emerald-300 animate-pulse" />
           </div>
+          <span className="font-editorial text-sm font-bold tracking-wide">
+            {isProvider ? 'Ask Copilot 🤖' : 'SilverHands Assistant'}
+          </span>
         </button>
       )}
 
-      {/* CHATBOT MODAL CONTAINER */}
+      {/* CHATBOT / COPILOT MODAL CONTAINER */}
       {isOpen && (
-        <div className="w-[92vw] sm:w-[380px] h-[520px] bg-[#FBF9F4] rounded-3xl border border-[#E2E7E3] shadow-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200">
+        <div className="w-[92vw] sm:w-[400px] h-[540px] bg-[#FBF9F4] rounded-3xl border border-[#E2E7E3] shadow-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200">
           
           {/* HEADER */}
           <div className="bg-[#16382B] text-white p-4 flex justify-between items-center shrink-0">
@@ -102,10 +135,14 @@ export default function Chatbot() {
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
-                  <h3 className="font-editorial text-lg font-bold">SilverHands Assistant</h3>
+                  <h3 className="font-editorial text-lg font-bold">
+                    {isProvider ? '🤖 SilverHands Copilot' : 'SilverHands Assistant'}
+                  </h3>
                   <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
                 </div>
-                <p className="text-[10px] text-emerald-200/80 font-medium">AI Discovery & Match Guide</p>
+                <p className="text-[10px] text-emerald-200/80 font-medium">
+                  {isProvider ? 'Your AI guide to finding & growing opportunities.' : 'AI Discovery & Match Guide'}
+                </p>
               </div>
             </div>
 
@@ -126,7 +163,7 @@ export default function Chatbot() {
             {loading && (
               <div className="flex items-center gap-2 text-slate-500 text-xs py-2 italic">
                 <div className="w-4 h-4 border-2 border-[#16382B] border-t-transparent rounded-full animate-spin" />
-                <span>Searching SilverHands database...</span>
+                <span>{isProvider ? 'Copilot is analyzing your livelihood data...' : 'Searching SilverHands database...'}</span>
               </div>
             )}
 
@@ -140,7 +177,7 @@ export default function Chatbot() {
                 <button
                   key={idx}
                   onClick={() => handleSendMessage(sug)}
-                  className="py-1 px-2.5 rounded-full bg-white border border-[#D2DDD5] text-[10px] font-bold text-[#16382B] hover:bg-[#E6ECE7] whitespace-nowrap transition-all cursor-pointer"
+                  className="py-1 px-2.5 rounded-full bg-white border border-[#D2DDD5] text-[10px] font-bold text-[#16382B] hover:bg-[#E6ECE7] whitespace-nowrap transition-all cursor-pointer shadow-2xs"
                 >
                   {sug}
                 </button>

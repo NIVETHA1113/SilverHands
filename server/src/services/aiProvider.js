@@ -37,7 +37,6 @@ export const heuristicExtractSkills = (text) => {
   const lower = text.toLowerCase();
   const skillsMap = new Map();
 
-  // Extract years if present
   const yearsMatch = lower.match(/(\d+)\s*(?:years?|yrs?|yr)/i);
   const detectedYears = yearsMatch ? parseInt(yearsMatch[1], 10) : null;
 
@@ -76,7 +75,6 @@ export const heuristicExtractSkills = (text) => {
     }
   }
 
-  // If specific skills were not matched, extract any generic intent or fallback
   if (skillsMap.size === 0) {
     skillsMap.set('General Consulting', {
       name: 'General Consulting',
@@ -143,7 +141,6 @@ export const heuristicExtractRequirement = (text) => {
 
   const lower = text.toLowerCase();
 
-  // Detect category
   let category = 'General';
   if (lower.includes('cook') || lower.includes('food') || lower.includes('meal') || lower.includes('baking') || lower.includes('pickle')) {
     category = 'Cooking';
@@ -161,7 +158,6 @@ export const heuristicExtractRequirement = (text) => {
     category = 'Arts & Music';
   }
 
-  // Detect specific skills
   const skills = [];
   if (lower.includes('tamil cooking')) skills.push('Tamil Cooking');
   else if (lower.includes('south indian cooking') || lower.includes('south indian')) skills.push('South Indian Cooking');
@@ -176,7 +172,6 @@ export const heuristicExtractRequirement = (text) => {
     skills.push(category);
   }
 
-  // Detect availability
   const availability = [];
   if (lower.includes('weekend') || lower.includes('saturday') || lower.includes('sunday')) {
     availability.push('Weekend');
@@ -189,7 +184,6 @@ export const heuristicExtractRequirement = (text) => {
   if (lower.includes('afternoon')) availability.push('Afternoon');
   if (availability.length === 0) availability.push('Flexible');
 
-  // Detect location preference
   let locationPreference = 'Nearby';
   if (lower.includes('online') || lower.includes('remote') || lower.includes('virtual')) {
     locationPreference = 'Online';
@@ -225,6 +219,28 @@ export const heuristicExplainMatch = ({ matchScore = 0, reasons = [] }) => {
   };
 };
 
+export const heuristicGenerateCopilotGuidance = ({ userMessage = '', context = {} }) => {
+  const primarySkill = context.provider?.skills?.[0]?.name || 'your primary skill';
+  const servicesCount = context.servicesCount || 0;
+  const profileScore = context.provider?.profileScore || 0;
+  const topGap = context.skillGapAnalysis?.topSkillGaps?.[0];
+
+  let explanation = '';
+
+  if (servicesCount === 0) {
+    explanation = `Publishing your first service listing will significantly improve your discoverability on SilverHands because customers will be able to search and find your **${primarySkill}** skill directly. While it doesn't guarantee instant orders, it gives local clients a clear way to discover and hire you.`;
+  } else if (topGap) {
+    explanation = `Developing **${topGap.skillName}** will strengthen your opportunity readiness. While platform success depends on local customer demand, closing this skill gap makes you eligible for **${topGap.count}** additional near-match opportunities alongside your **${primarySkill}** experience.`;
+  } else {
+    explanation = `Maintaining active service listings and keeping a high profile completeness score (**${profileScore}%**) improves your visibility to local customers on SilverHands. Having active listings and verified skills provides the strongest foundation to attract clients.`;
+  }
+
+  return {
+    explanation,
+    source: 'heuristic_fallback'
+  };
+};
+
 /* =========================================================================
    GEMINI API CALLERS WITH ROBUST ERROR HANDLING AND PROMPTING
    ========================================================================= */
@@ -253,7 +269,6 @@ const callGeminiJson = async (prompt, systemInstruction) => {
     throw new Error('Empty response received from Gemini');
   }
 
-  // Parse JSON with sanitization of any markdown code blocks
   const cleanJson = text.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim();
   return JSON.parse(cleanJson);
 };
@@ -382,5 +397,29 @@ export const aiExplainMatch = async ({ matchScore = 0, reasons = [] }) => {
   } catch (error) {
     console.warn('[AI Provider Warning - Match Explanation Fallback Triggered]:', error.message);
     return heuristicExplainMatch({ matchScore, reasons });
+  }
+};
+
+// 6. Grounded Copilot Guidance Generation
+export const aiGenerateCopilotGuidance = async ({ userMessage = '', context = {} }) => {
+  if (!isKeyConfigured()) {
+    return heuristicGenerateCopilotGuidance({ userMessage, context });
+  }
+
+  try {
+    const prompt = `Respond to a provider's conversational question about their business/livelihood on SilverHands.\n\nProvider Question: "${userMessage}"\n\nFactual Context:\n- Primary Skill: ${context.provider?.skills?.[0]?.name || 'Tailoring'}\n- Profile Completeness: ${context.provider?.profileScore}%\n- Active Services: ${context.servicesCount}\n- Active Products: ${context.productsCount}\n- Next Best Action: ${context.nextBestAction?.title}\n- Top Skill Gap: ${context.skillGapAnalysis?.topSkillGaps?.[0]?.skillName || 'None'}\n\nGuidelines:\n- Explain facts clearly and ground recommendations strictly in platform facts.\n- DO NOT overclaim, guarantee income, or promise customer numbers.\n- Address follow-ups like "then" by referencing their recommended next action.\n\nReturn JSON: {"explanation": string}`;
+    const systemInstruction = 'You are SilverHands Copilot, an AI advisor for senior skill providers in India. Return JSON strictly: {"explanation": string}';
+
+    const parsed = await callGeminiJson(prompt, systemInstruction);
+    if (parsed && typeof parsed.explanation === 'string' && parsed.explanation.trim()) {
+      return {
+        explanation: parsed.explanation.trim(),
+        source: 'gemini'
+      };
+    }
+    return heuristicGenerateCopilotGuidance({ userMessage, context });
+  } catch (error) {
+    console.warn('[AI Provider Warning - Copilot Guidance Fallback Triggered]:', error.message);
+    return heuristicGenerateCopilotGuidance({ userMessage, context });
   }
 };
