@@ -21,7 +21,8 @@ export default function SkillPassportCard({
   completedCount = 0,
   trust = null,
   aiSummary = '',
-  isPublic = false
+  isPublic = false,
+  onLocationClick = null
 }) {
   if (!provider) return null;
 
@@ -79,7 +80,17 @@ export default function SkillPassportCard({
 
           <p className="text-xs text-emerald-100/90 font-medium flex items-center gap-2">
             <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-            <span>{provider.location?.city || 'Chennai'}, {provider.location?.state || 'Tamil Nadu'}, {provider.location?.country || 'India'}</span>
+            {onLocationClick ? (
+              <button
+                onClick={onLocationClick}
+                className="hover:text-white transition-colors cursor-pointer underline underline-offset-2 decoration-emerald-400/50"
+                title="View on map"
+              >
+                {provider.location?.city || 'Chennai'}, {provider.location?.state || 'Tamil Nadu'}, {provider.location?.country || 'India'}
+              </button>
+            ) : (
+              <span>{provider.location?.city || 'Chennai'}, {provider.location?.state || 'Tamil Nadu'}, {provider.location?.country || 'India'}</span>
+            )}
           </p>
 
           <div className="flex items-center gap-2 pt-1 flex-wrap">

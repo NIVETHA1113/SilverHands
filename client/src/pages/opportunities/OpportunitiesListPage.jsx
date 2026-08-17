@@ -36,10 +36,22 @@ export default function OpportunitiesListPage() {
 
   const [search, setSearch] = useState(searchParams.get('q') || '');
   const [category, setCategory] = useState(searchParams.get('category') || 'All');
-  const [city, setCity] = useState(searchParams.get('city') || '');
+  // Auto-seed from URL param → then user's profile city → then empty
+  const profileCity = user?.location?.city || '';
+  const [city, setCity] = useState(searchParams.get('city') || profileCity);
   const [sortBy, setSortBy] = useState('newest');
   const [page, setPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
+  // True when city was set automatically from the user's profile (not a manual/URL param)
+  const [usingProfileCity, setUsingProfileCity] = useState(
+    !searchParams.get('city') && !!profileCity
+  );
+
+  const clearLocationFilter = () => {
+    setCity('');
+    setUsingProfileCity(false);
+    setPage(1);
+  };
 
   const isCustomer = user?.role === 'customer';
   const isProvider = user?.role === 'provider';
@@ -87,11 +99,24 @@ export default function OpportunitiesListPage() {
             <div className="space-y-2">
               <span className="badge-sage uppercase tracking-wider text-xs">Open Opportunities</span>
               <h1 className="font-editorial text-3xl sm:text-4xl font-bold text-[#16382B]">
-                Browse Opportunities
+                {city ? `Opportunities near ${city}` : 'Browse Opportunities'}
               </h1>
               <p className="text-slate-600 text-sm sm:text-base max-w-xl">
                 Customers post tasks they need help with. Apply as a provider to offer your skills.
               </p>
+              {city && (
+                <div className="inline-flex items-center gap-2 bg-[#E6ECE7] text-[#16382B] text-xs font-semibold px-3 py-1.5 rounded-full border border-[#D2DDD5]">
+                  <MapPin className="w-3.5 h-3.5 shrink-0" />
+                  <span>Filtered by: {city}</span>
+                  <button
+                    onClick={clearLocationFilter}
+                    className="ml-1 hover:text-red-600 transition-colors"
+                    title="Clear location filter"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
             </div>
             {isAuthenticated && isCustomer && (
               <button
@@ -146,7 +171,7 @@ export default function OpportunitiesListPage() {
                   type="text"
                   placeholder="e.g. Chennai"
                   value={city}
-                  onChange={e => { setCity(e.target.value); setPage(1); }}
+                  onChange={e => { setCity(e.target.value); setUsingProfileCity(false); setPage(1); }}
                   className="input-editorial text-sm"
                 />
               </div>
@@ -175,12 +200,21 @@ export default function OpportunitiesListPage() {
         ) : opportunities.length === 0 ? (
           <div className="bg-white p-12 rounded-3xl border border-[#E2E7E3] text-center space-y-4 max-w-lg mx-auto">
             <Briefcase className="w-10 h-10 text-slate-300 mx-auto" />
-            <h3 className="font-editorial text-2xl font-bold text-[#16382B]">No open opportunities</h3>
+            <h3 className="font-editorial text-2xl font-bold text-[#16382B]">
+              {city ? `No opportunities found in ${city}` : 'No open opportunities'}
+            </h3>
             <p className="text-slate-500 text-sm">
-              {isCustomer
-                ? 'Be the first to post an opportunity for local providers to apply.'
-                : 'No open opportunities match your search. Try adjusting filters.'}
+              {city
+                ? `There are no open opportunities in ${city} right now.`
+                : isCustomer
+                  ? 'Be the first to post an opportunity for local providers to apply.'
+                  : 'No open opportunities match your search. Try adjusting filters.'}
             </p>
+            {city && (
+              <button onClick={clearLocationFilter} className="btn-secondary text-sm py-2.5 px-5">
+                <X className="w-4 h-4" /> Show all cities
+              </button>
+            )}
             {isCustomer && (
               <button onClick={() => navigate('/opportunities/create')} className="btn-primary text-sm py-3 px-6">
                 <Plus className="w-4 h-4" /> Post Opportunity

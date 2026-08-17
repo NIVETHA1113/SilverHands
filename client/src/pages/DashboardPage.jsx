@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { calculateProfileCompletion } from '../utils/profileUtils';
 import api from '../services/api';
 import ProviderLivelihoodDashboardPage from './provider/ProviderLivelihoodDashboardPage';
+import LocationMapModal from '../components/LocationMapModal';
 import { ShieldCheck, Star, Sparkles, MapPin, Search, Utensils, Scissors, BookOpen, Gift, Sprout, ArrowRight, CheckCircle2, Briefcase, Package, Plus, Eye, Compass, UserCheck } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -19,6 +20,7 @@ export default function DashboardPage() {
   const completionPercentage = calculateProfileCompletion(user);
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [mapOpen, setMapOpen] = useState(false);
 
   const handleCustomerSearch = (e) => {
     e.preventDefault();
@@ -30,6 +32,7 @@ export default function DashboardPage() {
   };
 
   return (
+    <>
     <div className="min-h-screen bg-[#FBF9F4] py-10 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto space-y-10">
         
@@ -58,7 +61,13 @@ export default function DashboardPage() {
                   <ShieldCheck className="w-4 h-4 text-emerald-700" /> Phone Verified
                 </span>
                 <span className="inline-flex items-center gap-1 text-slate-600">
-                  <MapPin className="w-4 h-4 text-[#16382B]" /> {user?.location?.city || 'Chennai'}
+                  <button
+                    onClick={() => setMapOpen(true)}
+                    className="inline-flex items-center gap-1 text-slate-600 hover:text-[#16382B] transition-colors cursor-pointer"
+                    title="View on map"
+                  >
+                    <MapPin className="w-4 h-4 text-[#16382B]" /> {user?.location?.city || 'Chennai'}
+                  </button>
                 </span>
                 <span className="inline-flex items-center gap-1 text-[#C07A46]">
                   <Star className="w-4 h-4 fill-current text-[#C07A46]" /> {user?.rating || 4.8}
@@ -141,5 +150,8 @@ export default function DashboardPage() {
 
       </div>
     </div>
+
+    {mapOpen && <LocationMapModal user={user} onClose={() => setMapOpen(false)} />}
+    </>
   );
 }

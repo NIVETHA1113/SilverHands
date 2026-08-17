@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 import SkillGapSection from '../../components/SkillGapSection';
 import SkillPassportCard from '../../components/SkillPassportCard';
+import LocationMapModal from '../../components/LocationMapModal';
 import {
   Sparkles,
   Star,
@@ -33,6 +34,7 @@ export default function ProviderLivelihoodDashboardPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [mapOpen, setMapOpen] = useState(false);
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -94,6 +96,7 @@ export default function ProviderLivelihoodDashboardPage() {
   } = data;
 
   return (
+    <>
     <div className="min-h-screen bg-[#FBF9F4] py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-8">
 
@@ -106,6 +109,7 @@ export default function ProviderLivelihoodDashboardPage() {
           completedCount={applications.completed}
           trust={reputation}
           aiSummary={aiSummary}
+          onLocationClick={() => setMapOpen(true)}
         />
 
         {/* ── 2. SILVERHANDS COPILOT ENTRY WIDGET ── */}
@@ -606,5 +610,8 @@ export default function ProviderLivelihoodDashboardPage() {
 
       </div>
     </div>
+
+    {mapOpen && <LocationMapModal user={provider} onClose={() => setMapOpen(false)} />}
+    </>
   );
 }
