@@ -24,47 +24,226 @@ const deliveryModes = ['Online', 'In Person', 'Home Based', 'Customer Location']
 const deliveryOptions = ['Pickup', 'Local Delivery', 'Shipping'];
 const experienceLevels = [
   { label: 'All Experience', min: null, max: null },
-  { label: '0 – 5 years',   min: 0,    max: 5  },
-  { label: '5 – 10 years',  min: 5,    max: 10 },
-  { label: '10 – 20 years', min: 10,   max: 20 },
-  { label: '20 + years',    min: 20,   max: null },
+  { label: '0 – 5 years', min: 0, max: 5 },
+  { label: '5 – 10 years', min: 5, max: 10 },
+  { label: '10 – 20 years', min: 10, max: 20 },
+  { label: '20 + years', min: 20, max: null },
 ];
 
 // ─── Sort option lists ─────────────────────────────────────────────────────
 const SORT_SERVICES_PRODUCTS = [
-  { value: 'relevance',   label: 'Relevance'        },
-  { value: 'newest',      label: 'Newest'           },
-  { value: 'price_asc',   label: 'Price: Low → High' },
-  { value: 'price_desc',  label: 'Price: High → Low' },
+  { value: 'relevance', label: 'Relevance' },
+  { value: 'newest', label: 'Newest' },
+  { value: 'price_asc', label: 'Price: Low → High' },
+  { value: 'price_desc', label: 'Price: High → Low' },
 ];
 const SORT_PROVIDERS = [
-  { value: 'relevance',  label: 'Relevance'  },
+  { value: 'relevance', label: 'Relevance' },
   { value: 'experience', label: 'Experience' },
-  { value: 'newest',     label: 'Newest'     },
+  { value: 'newest', label: 'Newest' },
 ];
+
+// ─── FilterPanel: MUST be a top-level component, never defined inside a ─────
+// render function. Defining it inside ExplorePage causes remount on every   ──
+// state update, which destroys DOM focus mid-typing.                        ──
+function FilterPanel({
+  activeTab,
+  selectedCity, setSelectedCity,
+  sortBy, setSortBy,
+  sortOptions,
+  minPrice, setMinPrice,
+  maxPrice, setMaxPrice,
+  selectedAvailability, toggleAvailability,
+  selectedDeliveryMode, toggleDeliveryMode,
+  selectedDeliveryOption, toggleDeliveryOption,
+  providerSkill, setProviderSkill,
+  selectedExperience, setSelectedExperience,
+  selectedLanguages, toggleLanguage,
+  hasActiveFilters, clearAllFilters,
+  setCurrentPage,
+}) {
+  return (
+    <div className="space-y-6">
+      {/* City */}
+      <div>
+        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">City</h4>
+        <select
+          value={selectedCity}
+          onChange={(e) => { setSelectedCity(e.target.value); setCurrentPage(1); }}
+          className="input-editorial text-sm py-2 px-3 w-full bg-white"
+        >
+          {citiesList.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+      </div>
+
+      {/* Sort */}
+      <div>
+        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Sort By</h4>
+        <select
+          value={sortBy}
+          onChange={(e) => { setSortBy(e.target.value); setCurrentPage(1); }}
+          className="input-editorial text-sm py-2 px-3 w-full bg-white"
+        >
+          {sortOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+      </div>
+
+      {/* ── SERVICES-specific ── */}
+      {activeTab === 'services' && (
+        <>
+          <div>
+            <h4 className="text-sm font-bold text-[#16382B] mb-3">Price Range (₹)</h4>
+            <div className="flex gap-2">
+              <input type="number" min="0" placeholder="Min" value={minPrice}
+                onChange={(e) => { setMinPrice(e.target.value); setCurrentPage(1); }}
+                className="input-editorial w-full text-sm py-2" />
+              <input type="number" min="0" placeholder="Max" value={maxPrice}
+                onChange={(e) => { setMaxPrice(e.target.value); setCurrentPage(1); }}
+                className="input-editorial w-full text-sm py-2" />
+            </div>
+          </div>
+
+          <div>
+            <h4 className="text-sm font-bold text-[#16382B] mb-3">Available Days</h4>
+            <div className="grid grid-cols-2 gap-1.5">
+              {availabilityDays.map((day) => (
+                <button key={day} onClick={() => { toggleAvailability(day); setCurrentPage(1); }}
+                  className={`py-1.5 px-2 rounded-lg text-xs font-semibold transition-all text-left ${selectedAvailability.includes(day)
+                    ? 'bg-[#16382B] text-white'
+                    : 'bg-[#FBF9F4] text-slate-700 border border-[#E2E7E3] hover:border-[#16382B]'
+                    }`}>
+                  {day.slice(0, 3)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h4 className="text-sm font-bold text-[#16382B] mb-3">Delivery Mode</h4>
+            <div className="space-y-1.5">
+              {deliveryModes.map((mode) => (
+                <label key={mode} className="flex items-center gap-2.5 cursor-pointer p-1.5 hover:bg-[#FBF9F4] rounded-lg">
+                  <input type="checkbox" checked={selectedDeliveryMode.includes(mode)}
+                    onChange={() => { toggleDeliveryMode(mode); setCurrentPage(1); }}
+                    className="w-4 h-4 rounded accent-[#16382B]" />
+                  <span className="text-sm text-slate-700">{mode}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ── PRODUCTS-specific ── */}
+      {activeTab === 'products' && (
+        <>
+          <div>
+            <h4 className="text-sm font-bold text-[#16382B] mb-3">Price Range (₹)</h4>
+            <div className="flex gap-2">
+              <input type="number" min="0" placeholder="Min" value={minPrice}
+                onChange={(e) => { setMinPrice(e.target.value); setCurrentPage(1); }}
+                className="input-editorial w-full text-sm py-2" />
+              <input type="number" min="0" placeholder="Max" value={maxPrice}
+                onChange={(e) => { setMaxPrice(e.target.value); setCurrentPage(1); }}
+                className="input-editorial w-full text-sm py-2" />
+            </div>
+          </div>
+
+          <div>
+            <h4 className="text-sm font-bold text-[#16382B] mb-3">Delivery Options</h4>
+            <div className="space-y-1.5">
+              {deliveryOptions.map((opt) => (
+                <label key={opt} className="flex items-center gap-2.5 cursor-pointer p-1.5 hover:bg-[#FBF9F4] rounded-lg">
+                  <input type="checkbox" checked={selectedDeliveryOption.includes(opt)}
+                    onChange={() => { toggleDeliveryOption(opt); setCurrentPage(1); }}
+                    className="w-4 h-4 rounded accent-[#16382B]" />
+                  <span className="text-sm text-slate-700">{opt}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ── PROVIDERS-specific ── */}
+      {activeTab === 'providers' && (
+        <>
+          <div>
+            <h4 className="text-sm font-bold text-[#16382B] mb-3">Skill</h4>
+            <input
+              type="text"
+              placeholder="e.g. Tailoring, Cooking…"
+              value={providerSkill}
+              onChange={(e) => { setProviderSkill(e.target.value); setCurrentPage(1); }}
+              className="input-editorial w-full text-sm py-2"
+            />
+          </div>
+
+          <div>
+            <h4 className="text-sm font-bold text-[#16382B] mb-3">Experience</h4>
+            <div className="space-y-1.5">
+              {experienceLevels.map((lvl) => (
+                <label key={lvl.label} className="flex items-center gap-2.5 cursor-pointer p-1.5 hover:bg-[#FBF9F4] rounded-lg">
+                  <input type="radio" name="experience"
+                    checked={selectedExperience.label === lvl.label}
+                    onChange={() => { setSelectedExperience(lvl); setCurrentPage(1); }}
+                    className="w-4 h-4 accent-[#16382B]" />
+                  <span className="text-sm text-slate-700">{lvl.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h4 className="text-sm font-bold text-[#16382B] mb-3">Languages</h4>
+            <div className="grid grid-cols-2 gap-1.5">
+              {languages.map((lang) => (
+                <button key={lang} onClick={() => { toggleLanguage(lang); setCurrentPage(1); }}
+                  className={`py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${selectedLanguages.includes(lang)
+                    ? 'bg-[#16382B] text-white'
+                    : 'bg-[#FBF9F4] text-slate-700 border border-[#E2E7E3] hover:border-[#16382B]'
+                    }`}>
+                  {lang}
+                </button>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Clear all */}
+      {hasActiveFilters && (
+        <button onClick={clearAllFilters}
+          className="w-full py-2 px-3 rounded-xl bg-red-50 text-red-700 hover:bg-red-100 transition-colors text-xs font-bold flex items-center justify-center gap-1.5">
+          <X className="w-3.5 h-3.5" /> Clear All Filters
+        </button>
+      )}
+    </div>
+  );
+}
 
 // ─── Component ─────────────────────────────────────────────────────────────
 export default function ExplorePage() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   // ── URL-synced state ──────────────────────────────────────────────────
-  const [activeTab,        setActiveTab]        = useState(searchParams.get('tab')      || 'services');
-  const [searchQuery,      setSearchQuery]      = useState(searchParams.get('q')        || '');
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'services');
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'All');
-  const [selectedCity,     setSelectedCity]     = useState(searchParams.get('city')     || 'All Cities');
-  const [currentPage,      setCurrentPage]      = useState(Number(searchParams.get('page')) || 1);
+  const [selectedCity, setSelectedCity] = useState(searchParams.get('city') || 'All Cities');
+  const [currentPage, setCurrentPage] = useState(Number(searchParams.get('page')) || 1);
 
   // ── Filter state ──────────────────────────────────────────────────────
-  const [minPrice,               setMinPrice]               = useState('');
-  const [maxPrice,               setMaxPrice]               = useState('');
-  const [sortBy,                 setSortBy]                 = useState('relevance');
-  const [selectedAvailability,   setSelectedAvailability]   = useState([]);
-  const [selectedDeliveryMode,   setSelectedDeliveryMode]   = useState([]);
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+  const [sortBy, setSortBy] = useState('relevance');
+  const [selectedAvailability, setSelectedAvailability] = useState([]);
+  const [selectedDeliveryMode, setSelectedDeliveryMode] = useState([]);
   const [selectedDeliveryOption, setSelectedDeliveryOption] = useState([]);
-  const [selectedExperience,     setSelectedExperience]     = useState(experienceLevels[0]);
-  const [selectedLanguages,      setSelectedLanguages]      = useState([]);
+  const [selectedExperience, setSelectedExperience] = useState(experienceLevels[0]);
+  const [selectedLanguages, setSelectedLanguages] = useState([]);
   // Provider-specific skill text filter (separate from category chips)
-  const [providerSkill,          setProviderSkill]          = useState('');
+  const [providerSkill, setProviderSkill] = useState('');
 
   // ── UI state ──────────────────────────────────────────────────────────
   // showFilters: controls the filter sidebar on ALL screen sizes.
@@ -72,49 +251,49 @@ export default function ExplorePage() {
   const [showFilters, setShowFilters] = useState(true);
 
   // ── Phase 6 matching state (providers tab only, non-breaking) ─────────
-  const [showMatchPanel,  setShowMatchPanel]  = useState(false);
+  const [showMatchPanel, setShowMatchPanel] = useState(false);
   const [matchSkillInput, setMatchSkillInput] = useState('');
-  const [matchSkills,     setMatchSkills]     = useState([]);
-  const [matchCity,       setMatchCity]       = useState('');
-  const [matchDays,       setMatchDays]       = useState([]);
-  const [matchResults,    setMatchResults]    = useState(null);   // null = not yet run
-  const [matchLoading,    setMatchLoading]    = useState(false);
-  const [matchError,      setMatchError]      = useState(null);
-  const [expandedMatch,   setExpandedMatch]   = useState(null);  // providerId with open breakdown
+  const [matchSkills, setMatchSkills] = useState([]);
+  const [matchCity, setMatchCity] = useState('');
+  const [matchDays, setMatchDays] = useState([]);
+  const [matchResults, setMatchResults] = useState(null);   // null = not yet run
+  const [matchLoading, setMatchLoading] = useState(false);
+  const [matchError, setMatchError] = useState(null);
+  const [expandedMatch, setExpandedMatch] = useState(null);  // providerId with open breakdown
 
   // ── Result state ──────────────────────────────────────────────────────
-  const [results,     setResults]     = useState([]);
-  const [total,       setTotal]       = useState(0);
-  const [totalPages,  setTotalPages]  = useState(1);
-  const [loading,     setLoading]     = useState(true);
-  const [error,       setError]       = useState(null);
+  const [results, setResults] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // ── Sync state from URL whenever searchParams changes ────────────────
   // This handles navbar links like /explore?tab=services that update the
   // URL without remounting the component (React Router behaviour).
   useEffect(() => {
-    const tab      = searchParams.get('tab')      || 'services';
-    const q        = searchParams.get('q')        || '';
+    const tab = searchParams.get('tab') || 'services';
+    const q = searchParams.get('q') || '';
     const category = searchParams.get('category') || 'All';
-    const city     = searchParams.get('city')     || 'All Cities';
-    const page     = Number(searchParams.get('page')) || 1;
+    const city = searchParams.get('city') || 'All Cities';
+    const page = Number(searchParams.get('page')) || 1;
 
     setActiveTab(tab);
     setSearchQuery(q);
     setSelectedCategory(category);
     setSelectedCity(city);
     setCurrentPage(page);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   // ── Push readable params to URL ───────────────────────────────────────
   const pushUrlParams = (overrides = {}) => {
     const next = {
-      tab:      activeTab,
-      q:        searchQuery,
+      tab: activeTab,
+      q: searchQuery,
       category: selectedCategory !== 'All' ? selectedCategory : '',
-      city:     selectedCity !== 'All Cities' ? selectedCity : '',
-      page:     String(currentPage),
+      city: selectedCity !== 'All Cities' ? selectedCity : '',
+      page: String(currentPage),
       ...overrides,
     };
     const p = new URLSearchParams();
@@ -141,8 +320,8 @@ export default function ExplorePage() {
 
         if (activeTab === 'services') {
           p.set('status', 'published');
-          if (selectedAvailability.length)  p.set('availableDays', selectedAvailability.join(','));
-          if (selectedDeliveryMode.length)  p.set('deliveryMode',  selectedDeliveryMode.join(','));
+          if (selectedAvailability.length) p.set('availableDays', selectedAvailability.join(','));
+          if (selectedDeliveryMode.length) p.set('deliveryMode', selectedDeliveryMode.join(','));
 
           const res = await api.get(`/services?${p.toString()}`);
           if (res.data.success) {
@@ -252,10 +431,10 @@ export default function ExplorePage() {
   const toggle = (setter) => (val) =>
     setter(prev => prev.includes(val) ? prev.filter(v => v !== val) : [...prev, val]);
 
-  const toggleAvailability   = toggle(setSelectedAvailability);
-  const toggleDeliveryMode   = toggle(setSelectedDeliveryMode);
+  const toggleAvailability = toggle(setSelectedAvailability);
+  const toggleDeliveryMode = toggle(setSelectedDeliveryMode);
   const toggleDeliveryOption = toggle(setSelectedDeliveryOption);
-  const toggleLanguage       = toggle(setSelectedLanguages);
+  const toggleLanguage = toggle(setSelectedLanguages);
 
   const sortOptions = activeTab === 'providers' ? SORT_PROVIDERS : SORT_SERVICES_PRODUCTS;
 
@@ -279,8 +458,8 @@ export default function ExplorePage() {
     setMatchResults(null);
     try {
       const requirement = {
-        skills:       matchSkills,
-        location:     matchCity ? { city: matchCity } : {},
+        skills: matchSkills,
+        location: matchCity ? { city: matchCity } : {},
         availability: matchDays,
       };
       const data = await fetchProviderMatches(requirement);
@@ -309,164 +488,6 @@ export default function ExplorePage() {
       setShowMatchPanel(false);
     }
   }, [activeTab]);
-
-  // ── Filter panel (reused for sidebar & mobile drawer) ─────────────────
-  const FilterPanel = () => (
-    <div className="space-y-6">
-      {/* City */}
-      <div>
-        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">City</h4>
-        <select
-          value={selectedCity}
-          onChange={(e) => { setSelectedCity(e.target.value); setCurrentPage(1); }}
-          className="input-editorial text-sm py-2 px-3 w-full bg-white"
-        >
-          {citiesList.map((c) => <option key={c} value={c}>{c}</option>)}
-        </select>
-      </div>
-
-      {/* Sort */}
-      <div>
-        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Sort By</h4>
-        <select
-          value={sortBy}
-          onChange={(e) => { setSortBy(e.target.value); setCurrentPage(1); }}
-          className="input-editorial text-sm py-2 px-3 w-full bg-white"
-        >
-          {sortOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
-      </div>
-
-      {/* ── SERVICES-specific ── */}
-      {activeTab === 'services' && (
-        <>
-          <div>
-            <h4 className="text-sm font-bold text-[#16382B] mb-3">Price Range (₹)</h4>
-            <div className="flex gap-2">
-              <input type="number" min="0" placeholder="Min" value={minPrice}
-                onChange={(e) => { setMinPrice(e.target.value); setCurrentPage(1); }}
-                className="input-editorial w-full text-sm py-2" />
-              <input type="number" min="0" placeholder="Max" value={maxPrice}
-                onChange={(e) => { setMaxPrice(e.target.value); setCurrentPage(1); }}
-                className="input-editorial w-full text-sm py-2" />
-            </div>
-          </div>
-
-          <div>
-            <h4 className="text-sm font-bold text-[#16382B] mb-3">Available Days</h4>
-            <div className="grid grid-cols-2 gap-1.5">
-              {availabilityDays.map((day) => (
-                <button key={day} onClick={() => { toggleAvailability(day); setCurrentPage(1); }}
-                  className={`py-1.5 px-2 rounded-lg text-xs font-semibold transition-all text-left ${
-                    selectedAvailability.includes(day)
-                      ? 'bg-[#16382B] text-white'
-                      : 'bg-[#FBF9F4] text-slate-700 border border-[#E2E7E3] hover:border-[#16382B]'
-                  }`}>
-                  {day.slice(0, 3)}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <h4 className="text-sm font-bold text-[#16382B] mb-3">Delivery Mode</h4>
-            <div className="space-y-1.5">
-              {deliveryModes.map((mode) => (
-                <label key={mode} className="flex items-center gap-2.5 cursor-pointer p-1.5 hover:bg-[#FBF9F4] rounded-lg">
-                  <input type="checkbox" checked={selectedDeliveryMode.includes(mode)}
-                    onChange={() => { toggleDeliveryMode(mode); setCurrentPage(1); }}
-                    className="w-4 h-4 rounded accent-[#16382B]" />
-                  <span className="text-sm text-slate-700">{mode}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* ── PRODUCTS-specific ── */}
-      {activeTab === 'products' && (
-        <>
-          <div>
-            <h4 className="text-sm font-bold text-[#16382B] mb-3">Price Range (₹)</h4>
-            <div className="flex gap-2">
-              <input type="number" min="0" placeholder="Min" value={minPrice}
-                onChange={(e) => { setMinPrice(e.target.value); setCurrentPage(1); }}
-                className="input-editorial w-full text-sm py-2" />
-              <input type="number" min="0" placeholder="Max" value={maxPrice}
-                onChange={(e) => { setMaxPrice(e.target.value); setCurrentPage(1); }}
-                className="input-editorial w-full text-sm py-2" />
-            </div>
-          </div>
-
-          <div>
-            <h4 className="text-sm font-bold text-[#16382B] mb-3">Delivery Options</h4>
-            <div className="space-y-1.5">
-              {deliveryOptions.map((opt) => (
-                <label key={opt} className="flex items-center gap-2.5 cursor-pointer p-1.5 hover:bg-[#FBF9F4] rounded-lg">
-                  <input type="checkbox" checked={selectedDeliveryOption.includes(opt)}
-                    onChange={() => { toggleDeliveryOption(opt); setCurrentPage(1); }}
-                    className="w-4 h-4 rounded accent-[#16382B]" />
-                  <span className="text-sm text-slate-700">{opt}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* ── PROVIDERS-specific ── */}
-      {activeTab === 'providers' && (
-        <>
-          <div>
-            <h4 className="text-sm font-bold text-[#16382B] mb-3">Skill</h4>
-            <input type="text" placeholder="e.g. Tailoring, Cooking…" value={providerSkill}
-              onChange={(e) => { setProviderSkill(e.target.value); setCurrentPage(1); }}
-              className="input-editorial w-full text-sm py-2" />
-          </div>
-
-          <div>
-            <h4 className="text-sm font-bold text-[#16382B] mb-3">Experience</h4>
-            <div className="space-y-1.5">
-              {experienceLevels.map((lvl) => (
-                <label key={lvl.label} className="flex items-center gap-2.5 cursor-pointer p-1.5 hover:bg-[#FBF9F4] rounded-lg">
-                  <input type="radio" name="experience"
-                    checked={selectedExperience.label === lvl.label}
-                    onChange={() => { setSelectedExperience(lvl); setCurrentPage(1); }}
-                    className="w-4 h-4 accent-[#16382B]" />
-                  <span className="text-sm text-slate-700">{lvl.label}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <h4 className="text-sm font-bold text-[#16382B] mb-3">Languages</h4>
-            <div className="grid grid-cols-2 gap-1.5">
-              {languages.map((lang) => (
-                <button key={lang} onClick={() => { toggleLanguage(lang); setCurrentPage(1); }}
-                  className={`py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${
-                    selectedLanguages.includes(lang)
-                      ? 'bg-[#16382B] text-white'
-                      : 'bg-[#FBF9F4] text-slate-700 border border-[#E2E7E3] hover:border-[#16382B]'
-                  }`}>
-                  {lang}
-                </button>
-              ))}
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* Clear all */}
-      {hasActiveFilters && (
-        <button onClick={clearAllFilters}
-          className="w-full py-2 px-3 rounded-xl bg-red-50 text-red-700 hover:bg-red-100 transition-colors text-xs font-bold flex items-center justify-center gap-1.5">
-          <X className="w-3.5 h-3.5" /> Clear All Filters
-        </button>
-      )}
-    </div>
-  );
 
   // ─────────────────────────────────────────────────────────────────────
   return (
@@ -514,11 +535,10 @@ export default function ExplorePage() {
           <div className="flex gap-2 overflow-x-auto pb-2 pt-2 border-t border-[#E2E7E3] no-scrollbar">
             {categories.map((cat) => (
               <button key={cat} onClick={() => handleCategorySelect(cat)}
-                className={`py-2 px-4 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-                  selectedCategory === cat
-                    ? 'bg-[#16382B] text-white shadow-xs'
-                    : 'bg-[#FBF9F4] text-slate-700 hover:bg-[#E6ECE7] border border-[#E2E7E3]'
-                }`}>
+                className={`py-2 px-4 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${selectedCategory === cat
+                  ? 'bg-[#16382B] text-white shadow-xs'
+                  : 'bg-[#FBF9F4] text-slate-700 hover:bg-[#E6ECE7] border border-[#E2E7E3]'
+                  }`}>
                 {cat}
               </button>
             ))}
@@ -529,16 +549,15 @@ export default function ExplorePage() {
         <div className="bg-white p-4 rounded-2xl border border-[#E2E7E3] flex flex-wrap items-center justify-between gap-3">
           <div className="flex gap-2 overflow-x-auto">
             {[
-              { id: 'services',  label: 'Services',  Icon: Briefcase  },
-              { id: 'products',  label: 'Products',  Icon: Package    },
-              { id: 'providers', label: 'Providers', Icon: UserCheck  },
+              { id: 'services', label: 'Services', Icon: Briefcase },
+              { id: 'products', label: 'Products', Icon: Package },
+              { id: 'providers', label: 'Providers', Icon: UserCheck },
             ].map(({ id, label, Icon }) => (
               <button key={id} onClick={() => handleTabChange(id)}
-                className={`py-2.5 px-5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
-                  activeTab === id
-                    ? 'bg-[#16382B] text-white shadow-xs'
-                    : 'text-slate-600 hover:bg-[#FBF9F4] hover:text-[#16382B]'
-                }`}>
+                className={`py-2.5 px-5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${activeTab === id
+                  ? 'bg-[#16382B] text-white shadow-xs'
+                  : 'text-slate-600 hover:bg-[#FBF9F4] hover:text-[#16382B]'
+                  }`}>
                 <Icon className="w-4 h-4" />
                 {label}
               </button>
@@ -567,7 +586,22 @@ export default function ExplorePage() {
               <h3 className="text-sm font-bold text-[#16382B] mb-5 flex items-center gap-2">
                 <Filter className="w-4 h-4" /> Filters &amp; Sort
               </h3>
-              <FilterPanel />
+              <FilterPanel
+                activeTab={activeTab}
+                selectedCity={selectedCity} setSelectedCity={setSelectedCity}
+                sortBy={sortBy} setSortBy={setSortBy}
+                sortOptions={sortOptions}
+                minPrice={minPrice} setMinPrice={setMinPrice}
+                maxPrice={maxPrice} setMaxPrice={setMaxPrice}
+                selectedAvailability={selectedAvailability} toggleAvailability={toggleAvailability}
+                selectedDeliveryMode={selectedDeliveryMode} toggleDeliveryMode={toggleDeliveryMode}
+                selectedDeliveryOption={selectedDeliveryOption} toggleDeliveryOption={toggleDeliveryOption}
+                providerSkill={providerSkill} setProviderSkill={setProviderSkill}
+                selectedExperience={selectedExperience} setSelectedExperience={setSelectedExperience}
+                selectedLanguages={selectedLanguages} toggleLanguage={toggleLanguage}
+                hasActiveFilters={hasActiveFilters} clearAllFilters={clearAllFilters}
+                setCurrentPage={setCurrentPage}
+              />
             </aside>
           )}
 
@@ -832,7 +866,7 @@ export default function ExplorePage() {
                           type="text"
                           value={matchSkillInput}
                           onChange={(e) => setMatchSkillInput(e.target.value)}
-                          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addMatchSkill(); }}}
+                          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addMatchSkill(); } }}
                           placeholder="e.g. Tailoring, Cooking…"
                           className="input-editorial flex-1 text-sm py-2"
                         />
@@ -884,11 +918,10 @@ export default function ExplorePage() {
                         <div className="flex flex-wrap gap-1.5">
                           {availabilityDays.map((day) => (
                             <button key={day} onClick={() => toggleMatchDay(day)}
-                              className={`py-1 px-2.5 rounded-lg text-xs font-semibold transition-all ${
-                                matchDays.includes(day)
-                                  ? 'bg-[#16382B] text-white'
-                                  : 'bg-[#FBF9F4] text-slate-700 border border-[#E2E7E3] hover:border-[#16382B]'
-                              }`}>
+                              className={`py-1 px-2.5 rounded-lg text-xs font-semibold transition-all ${matchDays.includes(day)
+                                ? 'bg-[#16382B] text-white'
+                                : 'bg-[#FBF9F4] text-slate-700 border border-[#E2E7E3] hover:border-[#16382B]'
+                                }`}>
                               {day.slice(0, 3)}
                             </button>
                           ))}
