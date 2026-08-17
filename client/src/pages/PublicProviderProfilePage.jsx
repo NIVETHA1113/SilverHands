@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, MapPin, Star, ShieldCheck, Briefcase, Package, Languages, Calendar, Award, ArrowRight, CheckCircle2, User } from 'lucide-react';
 import api, { reviewAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import SkillPassportCard from '../components/SkillPassportCard';
 
 export default function PublicProviderProfilePage() {
   const { id } = useParams();
@@ -78,71 +79,17 @@ export default function PublicProviderProfilePage() {
           <ArrowLeft className="w-4 h-4" /> Back
         </button>
 
-        {/* PROFILE HEADER CARD */}
-        <div className="bg-white p-6 sm:p-10 rounded-3xl border border-[#E2E7E3] shadow-sm space-y-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
-            <img
-              src={provider.profileImage || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=300'}
-              alt={provider.name}
-              className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-[#16382B] shadow-sm shrink-0"
-            />
-            <div className="space-y-2 flex-1">
-              <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="font-editorial text-3xl sm:text-4xl font-bold text-[#16382B]">
-                  {provider.name}
-                </h1>
-                <span className="badge-sage uppercase tracking-wider text-xs flex items-center gap-1">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" /> Verified Skill Provider
-                </span>
-              </div>
-
-              <div className="flex items-center gap-4 text-xs font-semibold text-slate-600 flex-wrap">
-                <span className="flex items-center gap-1">
-                  <MapPin className="w-4 h-4 text-[#16382B]" /> {provider.location?.city || 'Chennai'}, {provider.location?.state || 'Tamil Nadu'}
-                </span>
-                <span>•</span>
-                <span>Age {provider.age || 62}</span>
-                <span>•</span>
-                <span className="text-[#C07A46] font-bold flex items-center gap-1">
-                  <Star className="w-4 h-4 fill-current" /> {trust && trust.totalReviews > 0 ? trust.avgRating : (provider.rating || 4.8)} Trusted Provider
-                  {trust && trust.totalReviews > 0 && ` (${trust.totalReviews} reviews)`}
-                </span>
-              </div>
-
-              {provider.languages && provider.languages.length > 0 && (
-                <div className="flex items-center gap-2 text-xs text-slate-500 pt-1">
-                  <Languages className="w-4 h-4 text-slate-400" />
-                  <span className="font-semibold text-slate-700">Languages Spoken: </span>
-                  <span>{provider.languages.join(' • ')}</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Bio / About Section */}
-          <div className="space-y-2 pt-4 border-t border-[#E2E7E3]">
-            <h3 className="font-editorial text-xl font-bold text-[#16382B]">About</h3>
-            <p className="text-slate-700 leading-relaxed text-base italic">
-              "{provider.bio || 'Passionate homemaker and senior citizen sharing lifelong skills with local community members.'}"
-            </p>
-          </div>
-
-          {/* Skills Badges */}
-          {provider.skills && provider.skills.length > 0 && (
-            <div className="space-y-2 pt-2">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Skills & Traditional Experience</span>
-              <div className="flex flex-wrap gap-2">
-                {provider.skills.map((s, idx) => (
-                  <div key={idx} className="bg-[#FBF9F4] p-3 rounded-xl border border-[#E2E7E3] flex items-center gap-2">
-                    <Award className="w-4 h-4 text-[#16382B]" />
-                    <span className="font-bold text-[#16382B] text-xs">{s.name}</span>
-                    <span className="text-[11px] text-slate-500 font-medium">({s.experienceYears || 10}+ yrs exp)</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+        {/* 🪪 DIGITAL SKILL PASSPORT CARD */}
+        <SkillPassportCard
+          provider={provider}
+          skills={provider.skills || []}
+          servicesCount={services.length}
+          productsCount={products.length}
+          completedCount={trust ? trust.completedJobs : 0}
+          trust={trust}
+          aiSummary={provider.bio ? `Specialized in ${provider.skills?.map(s => s.name).join(', ') || 'traditional skills'}. ${provider.bio}` : ''}
+          isPublic={true}
+        />
 
         {/* PUBLISHED OFFERINGS SECTION */}
         <div className="space-y-8">
