@@ -80,22 +80,27 @@ const WEIGHTS_NO_RATING = {
  */
 const SKILL_ALIASES = {
   // Tailoring cluster
-  tailor:            'tailoring',
-  tailoring:         'tailoring',
-  stitching:         'tailoring',
-  stitch:            'tailoring',
-  sewing:            'tailoring',
-  sew:               'tailoring',
-  dressmaking:       'tailoring',
-  'custom tailoring':'tailoring',
-  alteration:        'tailoring',
-  alterations:       'tailoring',
+  tailor:                  'tailoring',
+  tailoring:               'tailoring',
+  stitching:               'tailoring',
+  stitch:                  'tailoring',
+  sewing:                  'tailoring',
+  sew:                     'tailoring',
+  dressmaking:             'tailoring',
+  'custom tailoring':      'tailoring',
+  alteration:              'tailoring',
+  alterations:             'tailoring',
+  'blouse stitching':      'tailoring',
+  'blouse making':         'tailoring',
 
   // Cooking cluster
-  cook:              'cooking',
-  cooking:           'cooking',
-  baking:            'baking',
-  baker:             'baking',
+  cook:                    'cooking',
+  cooking:                 'cooking',
+  'traditional cooking':   'cooking',
+  'home cooking':          'cooking',
+  'south indian cooking':  'cooking',
+  baking:                  'baking',
+  baker:                   'baking',
 
   // Teaching cluster
   teach:             'teaching',
@@ -165,9 +170,15 @@ export const normaliseSkills = (skills = []) => {
  * Skill compatibility score  (0 – 100).
  *
  * Scoring per requested skill:
- *   Exact normalised match  → 1.0 point
- *   Partial match (substring in either direction) → 0.5 point
- *   No match → 0
+ *   Exact normalised match            → 1.0 point  (e.g. "cooking" == "cooking")
+ *   Provider skill CONTAINS request   → 0.6 point  (e.g. provider has "traditional cooking", user wants "cooking")
+ *   No match                          → 0 points
+ *
+ * NOTE: We intentionally do NOT award partial credit when the requested skill
+ * contains the provider skill (req.includes(a)).  Example: searching "cooking"
+ * should NOT partially match a provider whose only skill is "craft" just
+ * because some substring relationship exists.  Aliases handle true synonyms
+ * (cook → cooking, tailor → tailoring, etc.) so those always become exact matches.
  *
  * Final = (totalPoints / requestedCount) × 100, rounded to integer.
  *
@@ -186,12 +197,19 @@ export const computeSkillScore = (requestedSkills = [], candidateSkills = []) =>
 
   let points = 0;
   for (const req of required) {
+    // 1. Exact match after normalisation (aliases already applied)
     if (available.includes(req)) {
       points += 1;
       continue;
     }
-    const partial = available.some(a => a.includes(req) || req.includes(a));
-    if (partial) points += 0.5;
+    // 2. Provider skill CONTAINS the requested skill as a substring
+    //    e.g. provider has "traditional cooking", user wants "cooking"
+    //    Only award partial if the provider token is strictly longer (genuinely broader skill)
+    const partial = available.some(a => a !== req && a.includes(req));
+    if (partial) {
+      points += 0.6;
+    }
+    // No match → 0 points for this requested skill
   }
 
   return Math.round((points / required.length) * 100);
@@ -462,8 +480,19 @@ export const buildMatchResult = (provider, requirement = {}) => {
  * @returns {object[]}  Sorted array of match results
  */
 export const rankProviders = (providers = [], requirement = {}) => {
+  const reqSkills = Array.isArray(requirement.skills) ? requirement.skills : [];
+  const skillsRequested = reqSkills.length > 0;
+
   return providers
     .map(p => buildMatchResult(p, requirement))
+    // ── Eligibility filter ──────────────────────────────────────────────
+    // When the customer specifies skills, only return providers who have at
+    // least some skill match (skillScore > 0).  A provider with 0% skill
+    // compatibility is not a relevant result regardless of how well they
+    // match on location or availability.
+    // When no skills were requested, all providers pass through (skill score
+    // defaults to 100 = "unconstrained").
+    .filter(result => !skillsRequested || result.breakdown.skill > 0)
     .sort((a, b) => {
       if (b.matchScore !== a.matchScore) return b.matchScore - a.matchScore;
       // Secondary: higher rating first (null rating sorts lower)
