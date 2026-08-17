@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 import SkillGapSection from '../../components/SkillGapSection';
+import SkillPassportCard from '../../components/SkillPassportCard';
 import {
   Sparkles,
   Star,
@@ -95,59 +96,16 @@ export default function ProviderLivelihoodDashboardPage() {
     <div className="min-h-screen bg-[#FBF9F4] py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-8">
 
-        {/* ── 1. HEADER OVERVIEW BANNER ── */}
-        <div className="bg-[#16382B] text-white rounded-3xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
-          <div className="absolute right-0 top-0 w-96 h-96 bg-emerald-900/30 rounded-full blur-3xl -z-0 pointer-events-none"></div>
-
-          <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-            <div className="flex items-center gap-4">
-              <img
-                src={provider.profileImage || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200'}
-                alt={provider.name}
-                className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-emerald-400/40 shadow-md shrink-0"
-              />
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="badge-terracotta text-[10px] uppercase font-bold tracking-wider">Skill Provider</span>
-                  {provider.verification?.profileVerified && (
-                    <span className="bg-emerald-800 text-emerald-200 border border-emerald-700 text-[10px] font-bold py-0.5 px-2 rounded-full flex items-center gap-1">
-                      <ShieldCheck className="w-3 h-3 text-emerald-300" /> Verified
-                    </span>
-                  )}
-                </div>
-                <h1 className="font-editorial text-2xl sm:text-3xl font-bold">
-                  Good day, {provider.name} 👋
-                </h1>
-                <p className="text-emerald-100/80 text-xs sm:text-sm font-medium flex items-center gap-2">
-                  <MapPin className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>{provider.location?.city || 'Chennai'}, {provider.location?.state || 'Tamil Nadu'}</span>
-                </p>
-              </div>
-            </div>
-
-            {/* Top Stat Badges */}
-            <div className="grid grid-cols-3 gap-3 w-full lg:w-auto bg-emerald-950/60 p-3 sm:p-4 rounded-2xl border border-emerald-800/60">
-              <div className="text-center px-2">
-                <span className="text-[10px] text-emerald-200/80 uppercase tracking-wider font-bold block">Livelihood Score</span>
-                <span className="font-editorial text-2xl font-bold text-emerald-300">
-                  {livelihoodScore.overall} <span className="text-xs text-emerald-200/60 font-normal">/100</span>
-                </span>
-              </div>
-              <div className="text-center border-x border-emerald-800/60 px-2">
-                <span className="text-[10px] text-emerald-200/80 uppercase tracking-wider font-bold block">Rating</span>
-                <span className="font-editorial text-2xl font-bold text-amber-300 flex items-center justify-center gap-1">
-                  <Star className="w-4 h-4 fill-amber-300 text-amber-300 inline" /> {reputation.rating}
-                </span>
-              </div>
-              <div className="text-center px-2">
-                <span className="text-[10px] text-emerald-200/80 uppercase tracking-wider font-bold block">Completed</span>
-                <span className="font-editorial text-2xl font-bold text-white">
-                  {applications.completed} <span className="text-xs text-emerald-200/60 font-normal">jobs</span>
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* ── 1. DIGITAL SKILL PASSPORT CREDENTIAL ── */}
+        <SkillPassportCard
+          provider={provider}
+          skills={skills}
+          servicesCount={services.active}
+          productsCount={products.active}
+          completedCount={applications.completed}
+          trust={reputation}
+          aiSummary={aiSummary}
+        />
 
         {/* ── 2. AI-POWERED GROWTH INSIGHT ── */}
         <div className="bg-gradient-to-r from-emerald-900 to-[#16382B] text-white p-5 rounded-3xl border border-emerald-800 shadow-md flex items-start gap-4">
