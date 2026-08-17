@@ -11,9 +11,9 @@ const BUDGET_TYPE_LABELS = { fixed: 'Fixed', per_hour: '/ hr', per_day: '/ day' 
 
 function StatusBadge({ status }) {
   const styles = {
-    open:      'bg-emerald-100 text-emerald-800',
-    paused:    'bg-amber-100 text-amber-800',
-    closed:    'bg-slate-100 text-slate-600',
+    open: 'bg-emerald-100 text-emerald-800',
+    paused: 'bg-amber-100 text-amber-800',
+    closed: 'bg-slate-100 text-slate-600',
     completed: 'bg-blue-100 text-blue-800',
   };
   return (
@@ -36,9 +36,9 @@ const formatApplicationStatus = (status) => {
 
 function AppStatusBadge({ status }) {
   const styles = {
-    pending:   'bg-amber-100 text-amber-800',
-    accepted:  'bg-emerald-100 text-emerald-800',
-    rejected:  'bg-red-100 text-red-700',
+    pending: 'bg-amber-100 text-amber-800',
+    accepted: 'bg-emerald-100 text-emerald-800',
+    rejected: 'bg-red-100 text-red-700',
     withdrawn: 'bg-slate-100 text-slate-500',
     completed: 'bg-blue-100 text-blue-800',
   };
@@ -87,7 +87,7 @@ export default function OpportunityDetailPage() {
             try {
               const tr = await reviewAPI.getProviderTrust(cid);
               if (tr.data.success) setTrust(tr.data.trust);
-            } catch (_) {}
+            } catch (_) { }
           }
         }
       } catch (err) {
@@ -111,7 +111,7 @@ export default function OpportunityDetailPage() {
           );
           setExistingApp(found || null);
         }
-      } catch (_) {}
+      } catch (_) { }
     };
     checkApp();
     const interval = setInterval(checkApp, 8000);

@@ -107,13 +107,14 @@ export default function OpportunitiesListPage() {
           {/* Search bar */}
           <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
-              <Search className="w-5 h-5 text-slate-400 absolute left-4 top-3.5" />
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 placeholder="Search by title, skill, or city..."
                 value={search}
                 onChange={e => { setSearch(e.target.value); setPage(1); }}
-                className="input-editorial pl-12"
+                className="input-editorial"
+                style={{ paddingLeft: '2.25rem' }}
               />
             </div>
             <button

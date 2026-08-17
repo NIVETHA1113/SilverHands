@@ -22,16 +22,16 @@ const formatApplicationStatus = (status) => {
 
 function AppStatusBadge({ status }) {
   const map = {
-    pending:   'bg-amber-100 text-amber-800',
-    accepted:  'bg-emerald-100 text-emerald-800',
-    rejected:  'bg-red-100 text-red-700',
+    pending: 'bg-amber-100 text-amber-800',
+    accepted: 'bg-emerald-100 text-emerald-800',
+    rejected: 'bg-red-100 text-red-700',
     withdrawn: 'bg-slate-100 text-slate-500',
     completed: 'bg-blue-100 text-blue-800',
   };
   const icons = {
-    pending:   <Clock className="w-3 h-3" />,
-    accepted:  <CheckCircle2 className="w-3 h-3" />,
-    rejected:  <XCircle className="w-3 h-3" />,
+    pending: <Clock className="w-3 h-3" />,
+    accepted: <CheckCircle2 className="w-3 h-3" />,
+    rejected: <XCircle className="w-3 h-3" />,
     withdrawn: <XCircle className="w-3 h-3" />,
     completed: <CheckCircle2 className="w-3 h-3" />,
   };
@@ -98,10 +98,10 @@ export default function MyApplicationsPage() {
   };
 
   // Group by status
-  const pending   = applications.filter(a => a.status === 'pending');
-  const accepted  = applications.filter(a => a.status === 'accepted');
+  const pending = applications.filter(a => a.status === 'pending');
+  const accepted = applications.filter(a => a.status === 'accepted');
   const completed = applications.filter(a => a.status === 'completed');
-  const other     = applications.filter(a => ['rejected', 'withdrawn'].includes(a.status));
+  const other = applications.filter(a => ['rejected', 'withdrawn'].includes(a.status));
 
   return (
     <div className="min-h-screen bg-[#FBF9F4] py-10 px-4 sm:px-6 lg:px-8">
@@ -231,7 +231,11 @@ function AppCard({ app, onWithdraw, withdrawing, navigate }) {
   const review = app.review || null;
   const budgetLabel = BUDGET_TYPE_LABELS[opp?.budgetType] || '';
   const baseUrl = import.meta.env.VITE_API_BASE_URL ? import.meta.env.VITE_API_BASE_URL.replace('/api', '') : 'http://localhost:5000';
-  const imageUrl = app.reviewImage ? (app.reviewImage.startsWith('http') ? app.reviewImage : `${baseUrl}${app.reviewImage}`) : '';
+  // Prefer review.imageUrl (authoritative), fall back to reviewImage field
+  const rawImagePath = review?.imageUrl || app.reviewImage || '';
+  const imageUrl = rawImagePath
+    ? (rawImagePath.startsWith('http') ? rawImagePath : `${baseUrl}${rawImagePath}`)
+    : '';
 
   return (
     <div className="bg-white rounded-2xl border border-[#E2E7E3] p-5 shadow-xs space-y-4">
@@ -281,11 +285,6 @@ function AppCard({ app, onWithdraw, withdrawing, navigate }) {
 
       {/* Actions */}
       <div className="flex flex-wrap gap-2 pt-1">
-        {opp?._id && (
-          <Link to={`/opportunities/${opp._id}`} className="btn-secondary text-xs py-2 px-4">
-            <Eye className="w-3.5 h-3.5" /> View Opportunity
-          </Link>
-        )}
         {app.status === 'pending' && (
           <button
             onClick={() => onWithdraw(app._id)}
@@ -311,7 +310,14 @@ function AppCard({ app, onWithdraw, withdrawing, navigate }) {
             )}
 
             <div className="space-y-2">
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Customer Review</p>
+              <div className="flex items-center gap-2">
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Customer Review</p>
+                {opp?._id && (
+                  <Link to={`/opportunities/${opp._id}`} className="text-slate-400 hover:text-[#16382B] transition-colors" title="View Opportunity">
+                    <Eye className="w-3.5 h-3.5" />
+                  </Link>
+                )}
+              </div>
               {review ? (
                 <>
                   <div className="flex items-center gap-1 text-[#C07A46] text-sm">

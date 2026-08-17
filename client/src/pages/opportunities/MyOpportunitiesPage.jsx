@@ -331,6 +331,11 @@ export default function MyOpportunitiesPage() {
 function ApplicationRow({ app, opp, hasAccepted, onAccept, onReject, onComplete, acceptLoading, rejectLoading, completeLoading, navigate }) {
   const provider = app.providerId;
   const budgetLabel = BUDGET_TYPE_LABELS[opp.budgetType] || '';
+  const review = app.review || null;
+  const baseUrl = import.meta.env.VITE_API_BASE_URL ? import.meta.env.VITE_API_BASE_URL.replace('/api', '') : 'http://localhost:5000';
+  const reviewImageUrl = app.reviewImage
+    ? (app.reviewImage.startsWith('http') ? app.reviewImage : `${baseUrl}${app.reviewImage}`)
+    : '';
 
   return (
     <div className="bg-white rounded-2xl border border-[#E2E7E3] p-5 space-y-4">
@@ -444,7 +449,7 @@ function ApplicationRow({ app, opp, hasAccepted, onAccept, onReject, onComplete,
               className="btn-primary text-xs py-2 px-4 bg-[#C07A46] hover:bg-[#a8662e]"
             >
               <Star className="w-3.5 h-3.5" />
-              <span>Leave Review</span>
+              <span>{review ? 'Update Review' : 'Leave Review'}</span>
             </button>
           </>
         )}
@@ -457,6 +462,42 @@ function ApplicationRow({ app, opp, hasAccepted, onAccept, onReject, onComplete,
           View Profile
         </Link>
       </div>
+
+      {/* Review display for completed applications */}
+      {app.status === 'completed' && (
+        <div className="space-y-3 border-t border-[#F0F4F1] pt-3">
+          {reviewImageUrl && (
+            <div className="space-y-2">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Completion Image</p>
+              <div className="w-48 h-48 rounded-2xl border border-[#E2E7E3] overflow-hidden bg-[#FAFAF8] flex items-center justify-center">
+                <img src={reviewImageUrl} alt="Completed work" className="w-full h-full object-contain" />
+              </div>
+            </div>
+          )}
+          <div className="space-y-2">
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Your Review</p>
+            {review ? (
+              <>
+                <div className="flex items-center gap-1 text-[#C07A46] text-sm">
+                  {Array.from({ length: 5 }).map((_, idx) => (
+                    <Star
+                      key={idx}
+                      className={`w-4 h-4 ${idx < review.rating ? 'fill-[#C07A46] text-[#C07A46]' : 'text-slate-300'}`}
+                    />
+                  ))}
+                  <span className="ml-1 text-slate-600 text-xs">({review.rating}/5)</span>
+                </div>
+                <p className="text-sm text-slate-600 italic">"{review.comment}"</p>
+                <p className="text-xs text-slate-500">
+                  Reviewed: {new Date(review.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-slate-500">No review submitted yet.</p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

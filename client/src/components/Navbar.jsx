@@ -22,7 +22,7 @@ export default function Navbar() {
     <nav className="bg-white/95 backdrop-blur-md border-b border-[#E2E7E3] sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
-          
+
           {/* LOGO */}
           <Link to="/" className="flex items-center gap-3 group">
             <div className="w-10 h-10 rounded-2xl bg-[#16382B] text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
@@ -40,26 +40,28 @@ export default function Navbar() {
 
           {/* DESKTOP NAVIGATION */}
           <div className="hidden md:flex items-center gap-6 text-sm font-semibold text-slate-700">
-            <Link
-              to="/explore"
-              className={`flex items-center gap-1.5 transition-colors ${
-                location.pathname.startsWith('/explore') ? 'text-[#16382B] font-bold' : 'hover:text-[#16382B]'
-              }`}
-            >
-              <Compass className="w-4 h-4 text-[#16382B]" />
-              <span>Explore</span>
-            </Link>
+            {isAuthenticated && (
+              <>
+                <Link
+                  to="/explore"
+                  className={`flex items-center gap-1.5 transition-colors ${location.pathname.startsWith('/explore') ? 'text-[#16382B] font-bold' : 'hover:text-[#16382B]'
+                    }`}
+                >
+                  <Compass className="w-4 h-4 text-[#16382B]" />
+                  <span>Explore</span>
+                </Link>
 
-            {/* Opportunities (Shared browse) */}
-            <Link
-              to="/opportunities"
-              className={`flex items-center gap-1.5 transition-colors ${
-                location.pathname === '/opportunities' ? 'text-[#16382B] font-bold' : 'hover:text-[#16382B]'
-              }`}
-            >
-              <FileText className="w-4 h-4" />
-              <span>Opportunities</span>
-            </Link>
+                {/* Opportunities (Shared browse) */}
+                <Link
+                  to="/opportunities"
+                  className={`flex items-center gap-1.5 transition-colors ${location.pathname === '/opportunities' ? 'text-[#16382B] font-bold' : 'hover:text-[#16382B]'
+                    }`}
+                >
+                  <FileText className="w-4 h-4" />
+                  <span>Opportunities</span>
+                </Link>
+              </>
+            )}
 
             {isAuthenticated ? (
               <>
@@ -68,9 +70,8 @@ export default function Navbar() {
                   <>
                     <Link
                       to="/dashboard"
-                      className={`flex items-center gap-1.5 transition-colors ${
-                        location.pathname === '/dashboard' ? 'text-[#16382B] font-bold' : 'hover:text-[#16382B]'
-                      }`}
+                      className={`flex items-center gap-1.5 transition-colors ${location.pathname === '/dashboard' ? 'text-[#16382B] font-bold' : 'hover:text-[#16382B]'
+                        }`}
                     >
                       <LayoutDashboard className="w-4 h-4" />
                       <span>Dashboard</span>
@@ -78,9 +79,8 @@ export default function Navbar() {
 
                     <Link
                       to="/provider/services"
-                      className={`flex items-center gap-1.5 transition-colors ${
-                        location.pathname.startsWith('/provider/services') ? 'text-[#16382B] font-bold' : 'hover:text-[#16382B]'
-                      }`}
+                      className={`flex items-center gap-1.5 transition-colors ${location.pathname.startsWith('/provider/services') ? 'text-[#16382B] font-bold' : 'hover:text-[#16382B]'
+                        }`}
                     >
                       <Briefcase className="w-4 h-4" />
                       <span>My Services</span>
@@ -88,9 +88,8 @@ export default function Navbar() {
 
                     <Link
                       to="/provider/products"
-                      className={`flex items-center gap-1.5 transition-colors ${
-                        location.pathname.startsWith('/provider/products') ? 'text-[#16382B] font-bold' : 'hover:text-[#16382B]'
-                      }`}
+                      className={`flex items-center gap-1.5 transition-colors ${location.pathname.startsWith('/provider/products') ? 'text-[#16382B] font-bold' : 'hover:text-[#16382B]'
+                        }`}
                     >
                       <Package className="w-4 h-4" />
                       <span>My Products</span>
@@ -98,9 +97,8 @@ export default function Navbar() {
 
                     <Link
                       to="/applications/my"
-                      className={`flex items-center gap-1.5 transition-colors ${
-                        location.pathname === '/applications/my' ? 'text-[#16382B] font-bold' : 'hover:text-[#16382B]'
-                      }`}
+                      className={`flex items-center gap-1.5 transition-colors ${location.pathname === '/applications/my' ? 'text-[#16382B] font-bold' : 'hover:text-[#16382B]'
+                        }`}
                     >
                       <span>My Applications</span>
                     </Link>
@@ -112,9 +110,8 @@ export default function Navbar() {
                   <>
                     <Link
                       to="/opportunities/create"
-                      className={`flex items-center gap-1.5 transition-colors text-[#C86D51] font-bold ${
-                        location.pathname === '/opportunities/create' ? 'underline' : 'hover:underline'
-                      }`}
+                      className={`flex items-center gap-1.5 transition-colors text-[#C86D51] font-bold ${location.pathname === '/opportunities/create' ? 'underline' : 'hover:underline'
+                        }`}
                     >
                       <PlusCircle className="w-4 h-4 text-[#C86D51]" />
                       <span>Post Opportunity</span>
@@ -122,9 +119,8 @@ export default function Navbar() {
 
                     <Link
                       to="/opportunities/my"
-                      className={`flex items-center gap-1.5 transition-colors ${
-                        location.pathname === '/opportunities/my' ? 'text-[#16382B] font-bold' : 'hover:text-[#16382B]'
-                      }`}
+                      className={`flex items-center gap-1.5 transition-colors ${location.pathname === '/opportunities/my' ? 'text-[#16382B] font-bold' : 'hover:text-[#16382B]'
+                        }`}
                     >
                       <span>My Opportunities</span>
                     </Link>
@@ -180,8 +176,12 @@ export default function Navbar() {
       {/* MOBILE DROPDOWN MENU */}
       {mobileMenuOpen && (
         <div className="md:hidden bg-white border-b border-[#E2E7E3] px-4 pt-2 pb-6 space-y-3">
-          <Link to="/explore" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-[#16382B]">🔍 Explore Marketplace</Link>
-          <Link to="/opportunities" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">Browse Opportunities</Link>
+          {isAuthenticated && (
+            <>
+              <Link to="/explore" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-[#16382B]">🔍 Explore Marketplace</Link>
+              <Link to="/opportunities" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">Browse Opportunities</Link>
+            </>
+          )}
 
           {isAuthenticated ? (
             <>

@@ -53,7 +53,7 @@ export default function App() {
               {/* Auth Routes */}
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/login" element={<LoginPage />} />
-              
+
               {/* Protected Dashboard Route (Shared / Role Switcher) */}
               <Route
                 path="/dashboard"
@@ -176,7 +176,7 @@ export default function App() {
             </Routes>
           </main>
           <Footer />
-          
+
           {/* Global SilverHands Assistant Floating Chatbot */}
           <Chatbot />
         </div>
