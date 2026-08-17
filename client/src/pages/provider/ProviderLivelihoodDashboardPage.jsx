@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
+import SkillGapSection from '../../components/SkillGapSection';
 import {
   Sparkles,
   Star,
@@ -254,7 +255,10 @@ export default function ProviderLivelihoodDashboardPage() {
           </div>
         </div>
 
-        {/* ── 4. PROFILE COMPLETENESS & SKILLS ROW ── */}
+        {/* ── 4. AI SKILL GAP → OPPORTUNITY UNLOCK SECTION ── */}
+        <SkillGapSection />
+
+        {/* ── 5. PROFILE COMPLETENESS & SKILLS ROW ── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           
           {/* Profile Completeness Checklist */}
@@ -321,7 +325,7 @@ export default function ProviderLivelihoodDashboardPage() {
 
         </div>
 
-        {/* ── 5. SERVICES & PRODUCTS OVERVIEW ── */}
+        {/* ── 6. SERVICES & PRODUCTS OVERVIEW ── */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           
           {/* Services Card */}
@@ -408,7 +412,7 @@ export default function ProviderLivelihoodDashboardPage() {
 
         </div>
 
-        {/* ── 6. OPPORTUNITIES FOR YOU (MATCHING ENGINE INTEGRATION) ── */}
+        {/* ── 7. OPPORTUNITIES FOR YOU ── */}
         <div className="bg-white p-6 sm:p-8 rounded-3xl border border-[#E2E7E3] shadow-xs space-y-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[#E2E7E3] pb-4">
             <div>
@@ -460,7 +464,7 @@ export default function ProviderLivelihoodDashboardPage() {
           )}
         </div>
 
-        {/* ── 7. APPLICATION BREAKDOWN & ESTIMATED WORK VALUE ── */}
+        {/* ── 8. APPLICATION BREAKDOWN & ESTIMATED WORK VALUE ── */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
           {/* Applications Status Breakdown (2 Columns) */}
@@ -525,7 +529,7 @@ export default function ProviderLivelihoodDashboardPage() {
 
         </div>
 
-        {/* ── 8. GROWTH SUGGESTIONS & RECENT ACTIVITY ── */}
+        {/* ── 9. GROWTH SUGGESTIONS & RECENT ACTIVITY ── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           
           {/* Growth Suggestions */}
@@ -593,7 +597,7 @@ export default function ProviderLivelihoodDashboardPage() {
 
         </div>
 
-        {/* ── 9. QUICK ACTIONS TOOLBAR ── */}
+        {/* ── 10. QUICK ACTIONS TOOLBAR ── */}
         <div className="bg-white p-6 rounded-3xl border border-[#E2E7E3] shadow-xs space-y-4">
           <h3 className="font-editorial text-xl font-bold text-[#16382B]">Quick Actions</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
