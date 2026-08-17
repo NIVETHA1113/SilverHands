@@ -80,7 +80,37 @@ export const getApplicationsForOpportunity = async (req, res) => {
       .populate('providerId', 'name profileImage location rating skills bio languages')
       .sort({ createdAt: -1 });
 
-    return res.json({ success: true, applications });
+    // Enrich completed applications with their review data
+    const completedApps = applications.filter(a => a.status === 'completed');
+    let reviewMap = {};
+    if (completedApps.length > 0) {
+      const reviewDocs = await Review.find({
+        applicationId: { $in: completedApps.map(a => a._id) }
+      }).populate('customerId', 'name').lean();
+
+      reviewDocs.forEach(review => {
+        reviewMap[review.applicationId.toString()] = {
+          _id: review._id,
+          rating: review.rating,
+          comment: review.comment,
+          imageUrl: review.imageUrl || '',
+          createdAt: review.createdAt,
+          customerId: review.customerId || null
+        };
+      });
+    }
+
+    const enriched = applications.map(app => {
+      const appObj = app.toObject();
+      const review = reviewMap[app._id.toString()] || null;
+      return {
+        ...appObj,
+        review,
+        reviewImage: review?.imageUrl || ''
+      };
+    });
+
+    return res.json({ success: true, applications: enriched });
   } catch (err) {
     console.error('[getApplicationsForOpportunity Error]:', err.message);
     return res.status(500).json({ success: false, message: err.message });

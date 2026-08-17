@@ -35,40 +35,49 @@ export const createReview = async (req, res) => {
     }
 
     const { rating, comment } = req.body;
-    const imageUrl = getReviewImageUrl(req);
+    const parsedRating = Number(rating);
 
-    if (!rating || !comment) {
+    if (!rating || !comment || !comment.trim()) {
       return res.status(400).json({ success: false, message: 'rating and comment are required.' });
     }
 
-    if (rating < 1 || rating > 5) {
+    if (isNaN(parsedRating) || parsedRating < 1 || parsedRating > 5) {
       return res.status(400).json({ success: false, message: 'Rating must be between 1 and 5.' });
     }
 
-    // Prevent duplicate review (the unique index also enforces this)
+    // Build update fields; only overwrite imageUrl when a new file was uploaded
+    const newImageUrl = getReviewImageUrl(req);
+
+    // Upsert: update existing review rather than returning 409 on re-submit
     const existing = await Review.findOne({
       applicationId: application._id,
       customerId: userId
     });
-    if (existing) {
-      return res.status(409).json({ success: false, message: 'You have already reviewed this application.' });
-    }
 
-    const review = await Review.create({
-      providerId: application.providerId,
-      customerId: userId,
-      opportunityId: application.opportunityId,
-      applicationId: application._id,
-      rating: Number(rating),
-      comment,
-      imageUrl
-    });
+    let review;
+    if (existing) {
+      existing.rating = parsedRating;
+      existing.comment = comment.trim();
+      if (newImageUrl) existing.imageUrl = newImageUrl;
+      review = await existing.save();
+    } else {
+      review = await Review.create({
+        providerId: application.providerId,
+        customerId: userId,
+        opportunityId: application.opportunityId,
+        applicationId: application._id,
+        rating: parsedRating,
+        comment: comment.trim(),
+        imageUrl: newImageUrl
+      });
+    }
 
     // Recompute provider trust rating from ALL their reviews in MongoDB
     await _refreshProviderRating(application.providerId.toString());
 
     const populated = await review.populate('customerId', 'name profileImage');
-    return res.status(201).json({ success: true, review: populated });
+    const statusCode = existing ? 200 : 201;
+    return res.status(statusCode).json({ success: true, review: populated });
   } catch (err) {
     if (err.code === 11000) {
       return res.status(409).json({ success: false, message: 'You have already reviewed this application.' });

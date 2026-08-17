@@ -182,11 +182,10 @@ export default function ReviewPage() {
                     aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
                   >
                     <Star
-                      className={`w-10 h-10 transition-colors ${
-                        star <= (hoverRating || rating)
+                      className={`w-10 h-10 transition-colors ${star <= (hoverRating || rating)
                           ? 'fill-[#C07A46] text-[#C07A46]'
                           : 'text-slate-300'
-                      }`}
+                        }`}
                     />
                   </button>
                 ))}
