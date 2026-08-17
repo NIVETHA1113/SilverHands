@@ -22,10 +22,24 @@ export const getPublicProviders = async (req, res) => {
       city,
       skill,
       language,
+      minExperience,
+      maxExperience,
       sort = 'relevance',
       page = 1,
       limit = 20
     } = req.query;
+
+    // ── DEBUG LOGGING ────────────────────────────────────────────────────
+    console.log('[getPublicProviders] ▶ RAW req.query:', JSON.stringify({
+      search, city, skill, language,
+      minExperience, maxExperience,
+      minExpType: typeof minExperience,
+      maxExpType: typeof maxExperience
+    }));
+    console.log('[getPublicProviders] ▶ Converted:', {
+      minExperienceNum: minExperience !== undefined ? Number(minExperience) : undefined,
+      maxExperienceNum: maxExperience !== undefined ? Number(maxExperience) : undefined
+    });
 
     const { pageNum, limitNum, skip } = normalizePagination(page, limit);
 
@@ -36,6 +50,8 @@ export const getPublicProviders = async (req, res) => {
         city,
         skill,
         language,
+        minExperience: minExperience !== undefined ? Number(minExperience) : undefined,
+        maxExperience: maxExperience !== undefined ? Number(maxExperience) : undefined,
         hasPublishedContent: true
       });
 
@@ -43,12 +59,20 @@ export const getPublicProviders = async (req, res) => {
       const sortOption = buildSortOption(sort);
 
       // Execute query
+      console.log('[getPublicProviders] ▶ Executing MongoDB query, counting documents...');
       const total = await User.countDocuments(query);
+      console.log('[getPublicProviders] ▶ countDocuments result:', total);
       const providers = await User.find(query)
         .select('-password -email -phone')
         .sort(sortOption)
         .skip(skip)
         .limit(limitNum);
+      console.log('[getPublicProviders] ▶ providers found:', providers.length);
+      if (providers.length > 0) {
+        console.log('[getPublicProviders] ▶ Sample provider skills:', JSON.stringify(
+          providers.slice(0, 3).map(p => ({ name: p.name, skills: p.skills }))
+        ));
+      }
 
       return res.json({
         success: true,
@@ -66,7 +90,9 @@ export const getPublicProviders = async (req, res) => {
         search,
         city,
         skill,
-        language
+        language,
+        minExperience: minExperience !== undefined ? Number(minExperience) : undefined,
+        maxExperience: maxExperience !== undefined ? Number(maxExperience) : undefined,
       });
 
       // Sort

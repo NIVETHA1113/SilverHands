@@ -121,7 +121,16 @@ export const buildSortOption = (sort, hasRelevanceScore = false) => {
  * @returns {Object} MongoDB query object
  */
 export const buildProviderQuery = (params) => {
-  const { search, city, skill, language, hasPublishedContent } = params;
+  const { search, city, skill, language, minExperience, maxExperience, hasPublishedContent } = params;
+
+  // ── DEBUG LOGGING ─────────────────────────────────────────────────────
+  console.log('[buildProviderQuery] ▶ RAW params received:', JSON.stringify({
+    search, city, skill, language,
+    minExperience, maxExperience,
+    minExpType: typeof minExperience,
+    maxExpType: typeof maxExperience,
+    hasPublishedContent
+  }));
 
   const query = {
     role: 'provider'
@@ -140,7 +149,7 @@ export const buildProviderQuery = (params) => {
     query['location.city'] = new RegExp(city, 'i');
   }
 
-  // Skill filter
+  // Skill name filter
   if (skill && skill.trim()) {
     query['skills.name'] = new RegExp(skill, 'i');
   }
@@ -165,6 +174,38 @@ export const buildProviderQuery = (params) => {
     ];
   }
 
+  // ── Experience range filter ───────────────────────────────────────────
+  // Finds providers where AT LEAST ONE skill has experienceYears in the
+  // inclusive range [minExperience, maxExperience].
+  // "20+ years" only passes minExperience=20 (open-ended upper bound).
+  // Applied via $and so it never conflicts with other query conditions.
+  const hasMin = Number.isFinite(minExperience);
+  const hasMax = Number.isFinite(maxExperience);
+
+  console.log('[buildProviderQuery] ▶ Experience check:', {
+    minExperience, maxExperience,
+    hasMin, hasMax
+  });
+
+  if (hasMin || hasMax) {
+    const expYearsCondition = {};
+    if (hasMin) expYearsCondition.$gte = minExperience;
+    if (hasMax) expYearsCondition.$lte = maxExperience;
+
+    const expClause = { skills: { $elemMatch: { experienceYears: expYearsCondition } } };
+
+    console.log('[buildProviderQuery] ▶ expYearsCondition:', JSON.stringify(expYearsCondition));
+    console.log('[buildProviderQuery] ▶ expClause:', JSON.stringify(expClause));
+
+    // Merge safely with any existing $and array
+    if (query.$and) {
+      query.$and.push(expClause);
+    } else {
+      query.$and = [expClause];
+    }
+  }
+
+  console.log('[buildProviderQuery] ▶ FINAL QUERY:', JSON.stringify(query, null, 2));
   return query;
 };
 
@@ -267,7 +308,7 @@ export const filterInMemoryListings = (list, params) => {
  * @returns {Array} Filtered providers
  */
 export const filterInMemoryProviders = (providers, params) => {
-  const { search, city, skill, language } = params;
+  const { search, city, skill, language, minExperience, maxExperience } = params;
 
   let filtered = providers.filter(p => p.role === 'provider');
 
@@ -302,6 +343,21 @@ export const filterInMemoryProviders = (providers, params) => {
       p.bio?.toLowerCase().includes(q) ||
       p.location?.city?.toLowerCase().includes(q) ||
       (p.skills && p.skills.some(s => s.name?.toLowerCase().includes(q)))
+    );
+  }
+
+  // Experience range filter
+  // At least one skill must have experienceYears within the inclusive range.
+  const hasMin = Number.isFinite(Number(minExperience));
+  const hasMax = Number.isFinite(Number(maxExperience));
+  if (hasMin || hasMax) {
+    const min = hasMin ? Number(minExperience) : 0;
+    const max = hasMax ? Number(maxExperience) : Infinity;
+    filtered = filtered.filter(p =>
+      p.skills && p.skills.some(s => {
+        const yrs = Number(s.experienceYears);
+        return Number.isFinite(yrs) && yrs >= min && yrs <= max;
+      })
     );
   }
 
