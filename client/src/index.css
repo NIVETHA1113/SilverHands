@@ -239,6 +239,53 @@
   }
 }
 
+/* ── Landing page skill-pill icon spin on hover ─────────────────────────── */
+
+/* The emoji icon box inside the pill */
+.skill-spin {
+  transition: transform 0.3s ease;
+}
+
+/* Spin when the whole pill card is hovered */
+div:hover > .skill-spin,
+div:focus-within > .skill-spin {
+  animation: skill-spin-once 0.55s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes skill-spin-once {
+  0%   { transform: rotate(0deg)   scale(1);    }
+  40%  { transform: rotate(200deg) scale(1.18); }
+  70%  { transform: rotate(340deg) scale(1.10); }
+  100% { transform: rotate(360deg) scale(1);    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skill-spin,
+  div:hover > .skill-spin { animation: none; transform: none; }
+}
+
+/* ── SilverHands logo glow ───────────────────────────────────────────────── */
+.logo-glow {
+  animation: logo-glow-pulse 3s ease-in-out infinite;
+}
+
+@keyframes logo-glow-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 6px  2px rgba(52, 211, 153, 0.25),
+      0 0 14px 4px rgba(22,  56,  43,  0.20);
+  }
+  50% {
+    box-shadow:
+      0 0 12px 4px rgba(52, 211, 153, 0.50),
+      0 0 28px 8px rgba(22,  56,  43,  0.30);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-glow { animation: none; }
+}
+
 /* ── Explore page — Search button & scrollbar utility ───────────────────── */
 
 /* Language toggle button */

@@ -29,7 +29,7 @@ export default function Navbar() {
 
           {/* LOGO */}
           <Link to="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-2xl bg-[#16382B] text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
+            <div className="w-10 h-10 rounded-2xl bg-[#16382B] text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform logo-glow">
               <Sparkles className="w-5 h-5 text-emerald-400" />
             </div>
             <div>

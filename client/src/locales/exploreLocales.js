@@ -11,7 +11,38 @@ import { useLanguage } from '../contexts/LanguageContext';
 // ─── Translation map ──────────────────────────────────────────────────────────
 export const LOCALES = {
   en: {
-    // Navbar links
+    // Opportunities page — English
+    oppBadge:            'Open Opportunities',
+    oppTitleNear:        (city) => `Opportunities near ${city}`,
+    oppTitleBrowse:      'Browse Opportunities',
+    oppSubtitle:         'Customers post tasks they need help with. Apply as a provider to offer your skills.',
+    oppFilteredBy:       (city) => `Filtered by: ${city}`,
+    oppPostBtn:          'Post Opportunity',
+    oppSearchPh:         'Search by title, skill, or city...',
+    oppFiltersBtn:       'Filters',
+    oppCatLabel:         'Category',
+    oppCityLabel:        'City',
+    oppCityPh:           'e.g. Chennai',
+    oppSortLabel:        'Sort By',
+    oppSortNewest:       'Newest First',
+    oppSortOldest:       'Oldest First',
+    oppSortBudgetAsc:    'Budget: Low to High',
+    oppSortBudgetDesc:   'Budget: High to Low',
+    oppNoTitle:          (city) => city ? `No opportunities found in ${city}` : 'No open opportunities',
+    oppNoSubCity:        (city) => `There are no open opportunities in ${city} right now.`,
+    oppNoSubCustomer:    'Be the first to post an opportunity for local providers to apply.',
+    oppNoSubProvider:    'No open opportunities match your search. Try adjusting filters.',
+    oppShowAllCities:    'Show all cities',
+    oppPageOf:           (cur, total) => `Page ${cur} of ${total}`,
+    oppApplication:      'Application',
+    oppApplications:     'Applications',
+    oppMore:             (n) => `+${n} more`,
+    oppApplyBtn:         'Apply',
+    oppBudgetFixed:      'Fixed',
+    oppBudgetPerHour:    '/hr',
+    oppBudgetPerDay:     '/day',
+
+    // Navbar links — English
     navExplore:          'Explore',
     navOpportunities:    'Opportunities',
     navDashboard:        'Dashboard',
@@ -220,6 +251,37 @@ export const LOCALES = {
 
   // ─── Tamil ─────────────────────────────────────────────────────────────────
   ta: {
+    // Opportunities page — Tamil
+    oppBadge:            'திறந்த வாய்ப்புகள்',
+    oppTitleNear:        (city) => `${city} அருகே வாய்ப்புகள்`,
+    oppTitleBrowse:      'வாய்ப்புகளை உலாவுக',
+    oppSubtitle:         'வாடிக்கையாளர்கள் தங்களுக்கு உதவி தேவைப்படும் பணிகளை பதிவிடுகின்றனர். வழங்குநராக விண்ணப்பிக்கவும்.',
+    oppFilteredBy:       (city) => `வடிகட்டல்: ${city}`,
+    oppPostBtn:          'வாய்ப்பு பதிவிடு',
+    oppSearchPh:         'தலைப்பு, திறன் அல்லது நகரம் தேடுக...',
+    oppFiltersBtn:       'வடிகட்டிகள்',
+    oppCatLabel:         'வகை',
+    oppCityLabel:        'நகரம்',
+    oppCityPh:           'எ.கா. சென்னை',
+    oppSortLabel:        'வரிசையாக்கு',
+    oppSortNewest:       'புதியது முதல்',
+    oppSortOldest:       'பழையது முதல்',
+    oppSortBudgetAsc:    'பட்ஜெட்: குறைவு → அதிகம்',
+    oppSortBudgetDesc:   'பட்ஜெட்: அதிகம் → குறைவு',
+    oppNoTitle:          (city) => city ? `${city} இல் வாய்ப்புகள் இல்லை` : 'திறந்த வாய்ப்புகள் இல்லை',
+    oppNoSubCity:        (city) => `${city} இல் தற்போது திறந்த வாய்ப்புகள் இல்லை.`,
+    oppNoSubCustomer:    'உள்ளூர் வழங்குநர்களுக்கு முதல் வாய்ப்பை பதிவிடுங்கள்.',
+    oppNoSubProvider:    'உங்கள் தேடலுக்கு பொருந்தும் வாய்ப்புகள் இல்லை. வடிகட்டிகளை சரிசெய்யவும்.',
+    oppShowAllCities:    'அனைத்து நகரங்களையும் காட்டு',
+    oppPageOf:           (cur, total) => `பக்கம் ${cur} / ${total}`,
+    oppApplication:      'விண்ணப்பம்',
+    oppApplications:     'விண்ணப்பங்கள்',
+    oppMore:             (n) => `+${n} மேலும்`,
+    oppApplyBtn:         'விண்ணப்பிக்கவும்',
+    oppBudgetFixed:      'நிலையான',
+    oppBudgetPerHour:    '/மணி',
+    oppBudgetPerDay:     '/நாள்',
+
     // Navbar links
     navExplore:          'ஆராய்க',
     navOpportunities:    'வாய்ப்புகள்',

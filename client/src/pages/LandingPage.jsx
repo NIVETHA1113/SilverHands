@@ -94,7 +94,7 @@ export default function LandingPage() {
 
               {/* Floating Skill Pill 1 */}
               <div className="absolute -top-2 -right-4 bg-white border border-[#E2E7E3] rounded-2xl p-3 shadow-md flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-[#FDF0EC] text-[#C86D51] flex items-center justify-center text-sm font-bold">
+                <div className="w-8 h-8 rounded-lg bg-[#FDF0EC] text-[#C86D51] flex items-center justify-center text-sm font-bold skill-spin">
                   🧵
                 </div>
                 <div>
@@ -106,7 +106,7 @@ export default function LandingPage() {
 
               {/* Floating Skill Pill 2 */}
               <div className="absolute top-1/2 -right-8 transform -translate-y-1/2 bg-white border border-[#E2E7E3] rounded-2xl p-3 shadow-md flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-800 flex items-center justify-center text-sm font-bold">
+                <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-800 flex items-center justify-center text-sm font-bold skill-spin">
                   🍱
                 </div>
                 <div>
@@ -118,7 +118,7 @@ export default function LandingPage() {
 
               {/* Floating Skill Pill 3 */}
               <div className="absolute -bottom-2 left-4 bg-white border border-[#E2E7E3] rounded-2xl p-3 shadow-md flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-800 flex items-center justify-center text-sm font-bold">
+                <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-800 flex items-center justify-center text-sm font-bold skill-spin">
                   📚
                 </div>
                 <div>
