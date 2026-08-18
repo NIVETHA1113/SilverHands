@@ -1,18 +1,30 @@
+import dns from 'dns';
 import mongoose from 'mongoose';
+
+dns.setServers(['1.1.1.1', '8.8.8.8']);
 
 export let isDbConnected = false;
 
 const connectDB = async () => {
-  const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/silverhands';
+  const uri = process.env.MONGODB_URI;
+
+  if (!uri) {
+    console.error('[Database] MONGODB_URI is not defined.');
+    isDbConnected = false;
+    return;
+  }
+
   try {
-    const conn = await mongoose.connect(uri, { serverSelectionTimeoutMS: 3000 });
+    const conn = await mongoose.connect(uri, {
+      serverSelectionTimeoutMS: 10000,
+    });
+
     isDbConnected = true;
     console.log(`[Database] MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
     isDbConnected = false;
-    console.warn(`[Database Warning] Could not connect to MongoDB (${error.message}). Operating in demo in-memory mode for Phase 1 authentication.`);
+    console.error(`[Database Error] ${error.message}`);
   }
 };
 
 export default connectDB;
-
