@@ -4,6 +4,7 @@ package-lock.json
 
 # Environment variables
 .env
+.env.example
 .env.local
 .env.development.local
 .env.test.local
@@ -24,3 +25,4 @@ yarn-error.log*
 Thumbs.db
 .vscode/
 .idea/
+server/.env.example
