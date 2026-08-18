@@ -1,23 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useLanguage } from '../contexts/LanguageContext';
-import { LOCALES } from '../locales/exploreLocales';
-import { Sparkles, Menu, X, LogOut, Compass, Briefcase, Package, LayoutDashboard, PlusCircle, FileText } from 'lucide-react';
+import { Sparkles, Menu, X, LogOut, Compass, Briefcase, Package, LayoutDashboard, FileText, ClipboardList, ChevronDown, MessageSquare, Award } from 'lucide-react';
 
 export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
-  const { lang } = useLanguage();
-  const n = LOCALES[lang] ?? LOCALES.en;   // navbar locale shorthand
   const navigate = useNavigate();
   const location = useLocation();
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
     setMobileMenuOpen(false);
+    setMoreDropdownOpen(false);
   };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setMoreDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const isProvider = user?.role === 'provider';
   const isCustomer = user?.role === 'customer';
@@ -43,88 +53,136 @@ export default function Navbar() {
           </Link>
 
           {/* DESKTOP NAVIGATION */}
-          <div className="hidden md:flex items-center gap-6 text-sm font-semibold text-slate-700 ml-10">
-            {isAuthenticated && (
+          <div className="hidden md:flex items-center gap-6 text-sm font-semibold text-slate-700">
+            {isAuthenticated ? (
               <>
+                {/* Explore Marketplace (Shared) */}
                 <Link
                   to="/explore"
                   className={`flex items-center gap-1.5 transition-colors ${location.pathname.startsWith('/explore') ? 'text-[#16382B] font-bold' : 'hover:text-[#16382B]'}`}
                 >
                   <Compass className="w-4 h-4 text-[#16382B]" />
-                  <span>{n.navExplore}</span>
+                  <span>Explore</span>
                 </Link>
 
-                {/* Opportunities (Shared browse) */}
-                <Link
-                  to="/opportunities"
-                  className={`flex items-center gap-1.5 transition-colors ${location.pathname === '/opportunities' ? 'text-[#16382B] font-bold' : 'hover:text-[#16382B]'}`}
-                >
-                  <FileText className="w-4 h-4" />
-                  <span>{n.navOpportunities}</span>
-                </Link>
-              </>
-            )}
-
-            {isAuthenticated ? (
-              <>
-                {/* PROVIDER-ONLY LINKS */}
+                {/* PROVIDER PRIMARY NAV */}
                 {isProvider && (
                   <>
+                    <Link
+                      to="/opportunities"
+                      className={`flex items-center gap-1.5 transition-colors ${location.pathname === '/opportunities' ? 'text-[#16382B] font-bold' : 'hover:text-[#16382B]'}`}
+                    >
+                      <FileText className="w-4 h-4" />
+                      <span>Opportunities</span>
+                    </Link>
+
+                    <Link
+                      to="/provider/dashboard"
+                      className={`flex items-center gap-1.5 transition-colors ${location.pathname === '/provider/dashboard' || location.pathname === '/dashboard' ? 'text-[#16382B] font-bold' : 'hover:text-[#16382B]'}`}
+                    >
+                      <LayoutDashboard className="w-4 h-4" />
+                      <span>Dashboard</span>
+                    </Link>
+                  </>
+                )}
+
+                {/* CUSTOMER PRIMARY NAV */}
+                {isCustomer && (
+                  <>
+                    <Link
+                      to="/requests"
+                      className={`flex items-center gap-1.5 transition-colors ${location.pathname.startsWith('/requests') || location.pathname.startsWith('/opportunities/my') || location.pathname.startsWith('/opportunities/create') ? 'text-[#16382B] font-bold' : 'hover:text-[#16382B]'}`}
+                    >
+                      <ClipboardList className="w-4 h-4 text-[#C86D51]" />
+                      <span>Requests</span>
+                    </Link>
+
                     <Link
                       to="/dashboard"
                       className={`flex items-center gap-1.5 transition-colors ${location.pathname === '/dashboard' ? 'text-[#16382B] font-bold' : 'hover:text-[#16382B]'}`}
                     >
                       <LayoutDashboard className="w-4 h-4" />
-                      <span>{n.navDashboard}</span>
-                    </Link>
-
-                    <Link
-                      to="/provider/services"
-                      className={`flex items-center gap-1.5 transition-colors ${location.pathname.startsWith('/provider/services') ? 'text-[#16382B] font-bold' : 'hover:text-[#16382B]'}`}
-                    >
-                      <Briefcase className="w-4 h-4" />
-                      <span>{n.navMyServices}</span>
-                    </Link>
-
-                    <Link
-                      to="/provider/products"
-                      className={`flex items-center gap-1.5 transition-colors ${location.pathname.startsWith('/provider/products') ? 'text-[#16382B] font-bold' : 'hover:text-[#16382B]'}`}
-                    >
-                      <Package className="w-4 h-4" />
-                      <span>{n.navMyProducts}</span>
-                    </Link>
-
-                    <Link
-                      to="/applications/my"
-                      className={`flex items-center gap-1.5 transition-colors ${location.pathname === '/applications/my' ? 'text-[#16382B] font-bold' : 'hover:text-[#16382B]'}`}
-                    >
-                      <span>{n.navMyApplications}</span>
+                      <span>Dashboard</span>
                     </Link>
                   </>
                 )}
 
-                {/* CUSTOMER-ONLY LINKS */}
-                {isCustomer && (
-                  <>
-                    <Link
-                      to="/opportunities/create"
-                      className={`flex items-center gap-1.5 transition-colors text-[#C86D51] font-bold ${location.pathname === '/opportunities/create' ? 'underline' : 'hover:underline'}`}
-                    >
-                      <PlusCircle className="w-4 h-4 text-[#C86D51]" />
-                      <span>{n.navPostOpportunity}</span>
-                    </Link>
+                {/* MORE ▾ DROPDOWN */}
+                <div className="relative" ref={dropdownRef}>
+                  <button
+                    onClick={() => setMoreDropdownOpen(!moreDropdownOpen)}
+                    className="flex items-center gap-1 hover:text-[#16382B] transition-colors cursor-pointer text-sm font-semibold"
+                  >
+                    <span>More</span>
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform ${moreDropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
 
-                    <Link
-                      to="/opportunities/my"
-                      className={`flex items-center gap-1.5 transition-colors ${location.pathname === '/opportunities/my' ? 'text-[#16382B] font-bold' : 'hover:text-[#16382B]'}`}
-                    >
-                      <span>{n.navMyOpportunities}</span>
-                    </Link>
-                  </>
-                )}
+                  {moreDropdownOpen && (
+                    <div className="absolute right-0 mt-3 w-52 bg-white rounded-2xl border border-[#E2E7E3] shadow-xl py-2 z-50 animate-fade-in">
+                      {isProvider && (
+                        <>
+                          <Link
+                            to="/provider/services"
+                            onClick={() => setMoreDropdownOpen(false)}
+                            className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-[#FBF9F4] hover:text-[#16382B]"
+                          >
+                            <Briefcase className="w-4 h-4 text-emerald-700" />
+                            <span>My Services</span>
+                          </Link>
+                          <Link
+                            to="/provider/products"
+                            onClick={() => setMoreDropdownOpen(false)}
+                            className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-[#FBF9F4] hover:text-[#16382B]"
+                          >
+                            <Package className="w-4 h-4 text-amber-700" />
+                            <span>My Products</span>
+                          </Link>
+                          <Link
+                            to="/applications/my"
+                            onClick={() => setMoreDropdownOpen(false)}
+                            className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-[#FBF9F4] hover:text-[#16382B]"
+                          >
+                            <FileText className="w-4 h-4 text-blue-700" />
+                            <span>My Applications</span>
+                          </Link>
+                          <Link
+                            to="/provider/dashboard"
+                            onClick={() => setMoreDropdownOpen(false)}
+                            className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-[#FBF9F4] hover:text-[#16382B]"
+                          >
+                            <Award className="w-4 h-4 text-[#C86D51]" />
+                            <span>Digital Skill Passport</span>
+                          </Link>
+                          <Link
+                            to="/messages"
+                            onClick={() => setMoreDropdownOpen(false)}
+                            className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-[#FBF9F4] hover:text-[#16382B] border-t border-[#EEF1EE] mt-1 pt-2"
+                          >
+                            <MessageSquare className="w-4 h-4 text-teal-700" />
+                            <span>Messages</span>
+                          </Link>
+                        </>
+                      )}
 
+                      {isCustomer && (
+                        <>
+                          <Link
+                            to="/messages"
+                            onClick={() => setMoreDropdownOpen(false)}
+                            className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-[#FBF9F4] hover:text-[#16382B]"
+                          >
+                            <MessageSquare className="w-4 h-4 text-teal-700" />
+                            <span>Messages</span>
+                          </Link>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* USER PROFILE & LOGOUT */}
                 <div className="flex items-center gap-3 pl-4 border-l border-[#E2E7E3]">
-                  <div className="flex items-center gap-2">
+                  <Link to="/dashboard" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
                     <img
                       src={user?.profileImage || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=150'}
                       alt={user?.name}
@@ -133,10 +191,10 @@ export default function Navbar() {
                     <div className="text-left text-xs">
                       <span className="font-bold text-[#16382B] block">{user?.name}</span>
                       <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
-                        {isProvider ? n.navRoleProvider : n.navRoleCustomer}
+                        {isProvider ? 'Skill Provider' : 'Customer'}
                       </span>
                     </div>
-                  </div>
+                  </Link>
 
                   <button
                     onClick={handleLogout}
@@ -150,10 +208,10 @@ export default function Navbar() {
             ) : (
               <div className="flex items-center gap-3">
                 <Link to="/login" className="btn-secondary text-xs py-2 px-4">
-                  {n.navLogIn}
+                  Log In
                 </Link>
                 <Link to="/register" className="btn-primary text-xs py-2 px-4 shadow-xs">
-                  {n.navJoin}
+                  Join SilverHands
                 </Link>
               </div>
             )}
@@ -173,25 +231,25 @@ export default function Navbar() {
       {mobileMenuOpen && (
         <div className="md:hidden bg-white border-b border-[#E2E7E3] px-4 pt-2 pb-6 space-y-3">
           {isAuthenticated && (
-            <>
-              <Link to="/explore" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-[#16382B]">{n.navExploreMarketplace}</Link>
-              <Link to="/opportunities" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">{n.navBrowseOpportunities}</Link>
-            </>
+            <Link to="/explore" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-[#16382B]">🔍 Explore Marketplace</Link>
           )}
 
           {isAuthenticated ? (
             <>
               {isProvider ? (
                 <>
-                  <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">{n.navDashboard}</Link>
-                  <Link to="/provider/services" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">{n.navMyServices}</Link>
-                  <Link to="/provider/products" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">{n.navMyProducts}</Link>
-                  <Link to="/applications/my" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">{n.navMyApplications}</Link>
+                  <Link to="/opportunities" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">Browse Opportunities</Link>
+                  <Link to="/provider/dashboard" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">Dashboard</Link>
+                  <Link to="/provider/services" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">My Services</Link>
+                  <Link to="/provider/products" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">My Products</Link>
+                  <Link to="/applications/my" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">My Applications</Link>
+                  <Link to="/messages" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">Messages</Link>
                 </>
               ) : (
                 <>
-                  <Link to="/opportunities/create" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-[#C86D51]">{n.navPostOpportunity}</Link>
-                  <Link to="/opportunities/my" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">{n.navMyOpportunities}</Link>
+                  <Link to="/requests" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-[#C86D51]">📋 Requests Hub</Link>
+                  <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">Dashboard</Link>
+                  <Link to="/messages" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">Messages</Link>
                 </>
               )}
 
@@ -199,13 +257,13 @@ export default function Navbar() {
                 onClick={handleLogout}
                 className="w-full text-left py-2 text-sm font-semibold text-red-700 pt-2 border-t border-[#E2E7E3]"
               >
-                {n.navLogOut}
+                Log Out
               </button>
             </>
           ) : (
             <div className="space-y-2 pt-2 border-t border-[#E2E7E3]">
-              <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="block btn-secondary text-center py-2 text-xs">{n.navLogIn}</Link>
-              <Link to="/register" onClick={() => setMobileMenuOpen(false)} className="block btn-primary text-center py-2 text-xs">{n.navJoin}</Link>
+              <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="block btn-secondary text-center py-2 text-xs">Log In</Link>
+              <Link to="/register" onClick={() => setMobileMenuOpen(false)} className="block btn-primary text-center py-2 text-xs">Join SilverHands</Link>
             </div>
           )}
         </div>

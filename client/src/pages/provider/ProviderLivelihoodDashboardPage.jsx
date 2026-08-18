@@ -8,28 +8,21 @@ import LocationMapModal from '../../components/LocationMapModal';
 import {
   Sparkles,
   Star,
-  CheckCircle2,
   Briefcase,
   Package,
   FileText,
-  TrendingUp,
-  MapPin,
   Award,
   ArrowRight,
   PlusCircle,
   Clock,
-  ShieldCheck,
-  UserCheck,
   AlertCircle,
-  Activity,
-  Layers,
-  Search,
   Bot,
   UserRound,
   GraduationCap,
   Gift,
   ClipboardCheck,
-  Target
+  Target,
+  MessageSquare
 } from 'lucide-react';
 
 export default function ProviderLivelihoodDashboardPage() {
@@ -87,14 +80,12 @@ export default function ProviderLivelihoodDashboardPage() {
   const {
     provider,
     livelihoodScore,
-    profileCompleteness,
     skills,
     services,
     products,
     opportunities,
     applications,
     reputation,
-    livelihoodActivity,
     growthSuggestions,
     aiSummary,
     recentActivity
@@ -102,520 +93,339 @@ export default function ProviderLivelihoodDashboardPage() {
 
   return (
     <>
-    <div className="min-h-screen bg-[#FBF9F4] py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto space-y-8">
+      <div className="min-h-screen bg-[#FBF9F4] py-8 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto space-y-8">
 
-        {/* ── 1. DIGITAL SKILL PASSPORT CREDENTIAL ── */}
-        <SkillPassportCard
-          provider={provider}
-          skills={skills}
-          servicesCount={services.active}
-          productsCount={products.active}
-          completedCount={applications.completed}
-          trust={reputation}
-          aiSummary={aiSummary}
-          onLocationClick={() => setMapOpen(true)}
-        />
-
-        {/* ── 2. SILVERHANDS COPILOT ENTRY WIDGET ── */}
-        <div className="bg-gradient-to-r from-emerald-950 via-[#16382B] to-emerald-900 text-white p-5 sm:p-6 rounded-3xl border border-emerald-700/80 shadow-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="flex items-start gap-3.5">
-            <div className="w-10 h-10 rounded-2xl bg-amber-400/20 border border-amber-300/40 flex items-center justify-center shrink-0 mt-0.5">
-              <Bot className="w-6 h-6 text-amber-300 animate-pulse" />
-            </div>
-            <div className="space-y-0.5">
-              <div className="flex items-center gap-2">
-                <span className="font-editorial text-lg font-bold text-white">SilverHands Copilot</span>
-                <span className="bg-amber-400/20 text-amber-300 border border-amber-300/30 text-[9px] font-bold py-0.5 px-2 rounded-full uppercase">AI Livelihood Advisor</span>
-              </div>
-              <p className="text-xs text-emerald-100/90 font-medium">
-                Ask Copilot for your personalized <strong className="text-amber-200">Next Best Action</strong> or opportunity guidance.
-              </p>
-            </div>
-          </div>
-
-          <Link
-            to="/opportunities"
-            className="btn-primary py-2.5 px-5 text-xs bg-amber-400 text-[#16382B] hover:bg-amber-300 font-bold shrink-0 shadow-md flex items-center gap-1.5"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Explore Opportunities</span>
-          </Link>
-        </div>
-
-        {/* ── 3. AI-POWERED GROWTH INSIGHT ── */}
-        <div className="bg-gradient-to-r from-emerald-900 to-[#16382B] text-white p-5 rounded-3xl border border-emerald-800 shadow-md flex items-start gap-4">
-          <div className="w-10 h-10 rounded-2xl bg-emerald-800/80 border border-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
-            <Sparkles className="w-5 h-5 text-emerald-300 animate-pulse" />
-          </div>
-          <div className="space-y-1 flex-1">
-            <h3 className="font-editorial text-base font-bold text-emerald-200 flex items-center gap-2">
-              <span>AI Platform Insights</span>
-            </h3>
-            <p className="text-xs text-emerald-100/90 leading-relaxed italic">
-              "{aiSummary}"
-            </p>
-          </div>
-        </div>
-
-        {/* ── 4. LIVELIHOOD SCORE & BREAKDOWN ── */}
-        <div className="bg-white rounded-3xl border border-[#E2E7E3] shadow-sm overflow-hidden">
-
-          {/* Card header */}
-          <div className="px-6 sm:px-8 pt-7 pb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-5 border-b border-[#EEF1EE]">
-            <div className="space-y-1">
-              <span className="badge-sage text-xs">Readiness Engine</span>
-              <h2 className="font-editorial text-2xl sm:text-3xl font-bold text-[#16382B]">Livelihood Score Breakdown</h2>
-              <p className="text-slate-400 text-xs">Transparent readiness score calculated from real platform signals</p>
-            </div>
-
-            {/* Score badge — medal animates, score text is static */}
-            <div className="flex items-center gap-3 bg-gradient-to-br from-[#FFFBF4] to-[#FFF5E6] py-3 px-5 rounded-2xl border border-[#F5DFB8] shadow-sm shrink-0">
-              <span className="award-icon-wrap">
-                <Award className="w-7 h-7 text-[#C86D51]" />
-              </span>
-              <div>
-                <span className="font-editorial text-2xl font-bold text-[#16382B] leading-none">{livelihoodScore.overall}</span>
-                <span className="text-slate-400 text-sm font-semibold"> / 100</span>
-                <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-0.5">Overall Livelihood Score</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Metrics grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-[#EEF1EE]">
-
-            {/* Profile Completeness */}
-            <div className="bg-white px-6 py-5 space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
-                  <UserRound className="w-5 h-5 text-[#16382B]" />
-                </div>
-                <div className="flex-1 flex justify-between items-center">
-                  <span className="text-sm font-semibold text-slate-700">Profile Completeness</span>
-                  <span className="text-sm font-bold text-[#16382B]">{livelihoodScore.breakdown.profile}%</span>
-                </div>
-              </div>
-              <div className="score-bar-track">
-                <div className="score-bar-fill bg-[#16382B]" style={{ '--bar-pct': `${livelihoodScore.breakdown.profile}%` }} />
-              </div>
-              <span className="text-[11px] text-slate-400 block">Photo, bio, location, languages</span>
-            </div>
-
-            {/* Skill Diversity */}
-            <div className="bg-white px-6 py-5 space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
-                  <GraduationCap className="w-5 h-5 text-emerald-600" />
-                </div>
-                <div className="flex-1 flex justify-between items-center">
-                  <span className="text-sm font-semibold text-slate-700">Skill Diversity</span>
-                  <span className="text-sm font-bold text-[#16382B]">{livelihoodScore.breakdown.skills}%</span>
-                </div>
-              </div>
-              <div className="score-bar-track">
-                <div className="score-bar-fill bg-emerald-500" style={{ '--bar-pct': `${livelihoodScore.breakdown.skills}%` }} />
-              </div>
-              <span className="text-[11px] text-slate-400 block">{skills.length} skills listed</span>
-            </div>
-
-            {/* Platform Offerings */}
-            <div className="bg-white px-6 py-5 space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center shrink-0">
-                  <Gift className="w-5 h-5 text-violet-500" />
-                </div>
-                <div className="flex-1 flex justify-between items-center">
-                  <span className="text-sm font-semibold text-slate-700">Platform Offerings</span>
-                  <span className="text-sm font-bold text-[#16382B]">{livelihoodScore.breakdown.offerings}%</span>
-                </div>
-              </div>
-              <div className="score-bar-track">
-                <div className="score-bar-fill bg-[#C86D51]" style={{ '--bar-pct': `${livelihoodScore.breakdown.offerings}%` }} />
-              </div>
-              <span className="text-[11px] text-slate-400 block">{services.active} services, {products.active} products</span>
-            </div>
-
-            {/* Customer Trust */}
-            <div className="bg-white px-6 py-5 space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
-                  <Star className="w-5 h-5 text-amber-500" />
-                </div>
-                <div className="flex-1 flex justify-between items-center">
-                  <span className="text-sm font-semibold text-slate-700">Customer Trust</span>
-                  <span className="text-sm font-bold text-[#16382B]">{livelihoodScore.breakdown.trust}%</span>
-                </div>
-              </div>
-              <div className="score-bar-track">
-                <div className="score-bar-fill bg-amber-500" style={{ '--bar-pct': `${livelihoodScore.breakdown.trust}%` }} />
-              </div>
-              <span className="text-[11px] text-slate-400 block">{reputation.rating}★ avg rating ({reputation.reviewCount} reviews)</span>
-            </div>
-
-            {/* Work Activity */}
-            <div className="bg-white px-6 py-5 space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center shrink-0">
-                  <ClipboardCheck className="w-5 h-5 text-teal-600" />
-                </div>
-                <div className="flex-1 flex justify-between items-center">
-                  <span className="text-sm font-semibold text-slate-700">Work Activity</span>
-                  <span className="text-sm font-bold text-[#16382B]">{livelihoodScore.breakdown.activity}%</span>
-                </div>
-              </div>
-              <div className="score-bar-track">
-                <div className="score-bar-fill bg-teal-500" style={{ '--bar-pct': `${livelihoodScore.breakdown.activity}%` }} />
-              </div>
-              <span className="text-[11px] text-slate-400 block">{applications.completed} completed, {applications.accepted} accepted</span>
-            </div>
-
-            {/* Opportunity Matching */}
-            <div className="bg-white px-6 py-5 space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
-                  <Target className="w-5 h-5 text-indigo-500" />
-                </div>
-                <div className="flex-1 flex justify-between items-center">
-                  <span className="text-sm font-semibold text-slate-700">Opportunity Matching</span>
-                  <span className="text-sm font-bold text-[#16382B]">{livelihoodScore.breakdown.matching}%</span>
-                </div>
-              </div>
-              <div className="score-bar-track">
-                <div className="score-bar-fill bg-indigo-500" style={{ '--bar-pct': `${livelihoodScore.breakdown.matching}%` }} />
-              </div>
-              <span className="text-[11px] text-slate-400 block">{opportunities.matchingCount} matching opportunities</span>
-            </div>
-
-          </div>
-        </div>
-
-        {/* ── 5. AI SKILL GAP → OPPORTUNITY UNLOCK SECTION ── */}
-        <SkillGapSection />
-
-        {/* ── 6. PROFILE COMPLETENESS & SKILLS ROW ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          
-          {/* Profile Completeness Checklist */}
-          <div className="bg-white p-6 rounded-3xl border border-[#E2E7E3] shadow-xs space-y-4 flex flex-col justify-between">
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <h3 className="font-editorial text-xl font-bold text-[#16382B]">Professional Profile</h3>
-                <span className="badge-[#16382B] text-xs">{profileCompleteness.score}% Complete</span>
-              </div>
-
-              {profileCompleteness.missingFields.length > 0 ? (
-                <div className="space-y-2 bg-amber-50/50 p-4 rounded-2xl border border-amber-200/60">
-                  <span className="text-xs font-bold text-amber-900 block">Complete these items to improve visibility:</span>
-                  <ul className="space-y-1.5 text-xs text-amber-950">
-                    {profileCompleteness.missingFields.map((field, idx) => (
-                      <li key={idx} className="flex items-center gap-2">
-                        <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                        <span>{field}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : (
-                <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-200 text-xs text-emerald-900 font-medium flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Your profile details are 100% complete and fully optimized!</span>
-                </div>
-              )}
-            </div>
-
-            <Link to="/onboarding" className="btn-primary text-xs py-2.5 px-4 w-full text-center flex items-center justify-center gap-2">
-              <UserCheck className="w-4 h-4" />
-              <span>{profileCompleteness.score < 100 ? 'Complete Profile' : 'Edit Profile Details'}</span>
-            </Link>
-          </div>
-
-          {/* Registered Skills List */}
-          <div className="bg-white p-6 rounded-3xl border border-[#E2E7E3] shadow-xs space-y-4 flex flex-col justify-between">
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <h3 className="font-editorial text-xl font-bold text-[#16382B]">Your Registered Skills</h3>
-                <span className="text-xs text-slate-500 font-semibold">{skills.length} Listed</span>
-              </div>
-
-              {skills.length > 0 ? (
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {skills.map((skill, idx) => (
-                    <div key={idx} className="bg-[#FBF9F4] border border-[#E2E7E3] py-2 px-3.5 rounded-2xl flex items-center gap-2">
-                      <span className="font-semibold text-xs text-[#16382B]">{skill.name}</span>
-                      <span className="badge-sage text-[9px] uppercase">{skill.proficiency || 'Experienced'}</span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-slate-500 italic py-4">No skills registered yet. Add your skills to match with local customer opportunities.</p>
-              )}
-            </div>
-
-            <Link to="/onboarding" className="btn-secondary text-xs py-2.5 px-4 w-full text-center flex items-center justify-center gap-2">
-              <Layers className="w-4 h-4" />
-              <span>Manage Skills</span>
-            </Link>
-          </div>
-
-        </div>
-
-        {/* ── 7. SERVICES & PRODUCTS OVERVIEW ── */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          
-          {/* Services Card */}
-          <div className="bg-white p-6 rounded-3xl border border-[#E2E7E3] shadow-xs space-y-4">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-200 text-[#16382B] flex items-center justify-center">
-                  <Briefcase className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-editorial text-xl font-bold text-[#16382B]">My Services</h3>
-                  <span className="text-xs text-slate-500 font-semibold">{services.active} Published Services</span>
-                </div>
-              </div>
-              <Link to="/provider/services/new" className="text-[#C86D51] font-bold text-xs hover:underline flex items-center gap-1">
-                <PlusCircle className="w-3.5 h-3.5" /> + New
-              </Link>
-            </div>
-
-            {services.items && services.items.length > 0 ? (
-              <div className="space-y-2">
-                {services.items.map((svc, i) => (
-                  <div key={i} className="bg-[#FBF9F4] p-3 rounded-2xl border border-[#E2E7E3] flex justify-between items-center">
-                    <div>
-                      <span className="font-bold text-xs text-[#16382B] block">{svc.title}</span>
-                      <span className="text-[10px] text-slate-500">{svc.category}</span>
-                    </div>
-                    <span className="font-editorial font-bold text-xs text-[#16382B]">₹{svc.price}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-6 bg-[#FBF9F4] rounded-2xl border border-dashed border-[#E2E7E3] space-y-2">
-                <p className="text-xs text-slate-500">You haven't offered any services yet.</p>
-              </div>
-            )}
-
-            <Link to="/provider/services" className="btn-secondary text-xs py-2 px-4 w-full flex items-center justify-center gap-1.5">
-              <span>Manage Services</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-
-          {/* Products Card */}
-          <div className="bg-white p-6 rounded-3xl border border-[#E2E7E3] shadow-xs space-y-4">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 flex items-center justify-center">
-                  <Package className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-editorial text-xl font-bold text-[#16382B]">My Products</h3>
-                  <span className="text-xs text-slate-500 font-semibold">{products.active} Products Listed</span>
-                </div>
-              </div>
-              <Link to="/provider/products/new" className="text-[#C86D51] font-bold text-xs hover:underline flex items-center gap-1">
-                <PlusCircle className="w-3.5 h-3.5" /> + New
-              </Link>
-            </div>
-
-            {products.items && products.items.length > 0 ? (
-              <div className="space-y-2">
-                {products.items.map((prd, i) => (
-                  <div key={i} className="bg-[#FBF9F4] p-3 rounded-2xl border border-[#E2E7E3] flex justify-between items-center">
-                    <div>
-                      <span className="font-bold text-xs text-[#16382B] block">{prd.name}</span>
-                      <span className="text-[10px] text-slate-500">{prd.category} • Stock: {prd.quantity}</span>
-                    </div>
-                    <span className="font-editorial font-bold text-xs text-[#16382B]">₹{prd.price} / {prd.unit}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-6 bg-[#FBF9F4] rounded-2xl border border-dashed border-[#E2E7E3] space-y-2">
-                <p className="text-xs text-slate-500">No products listed yet.</p>
-              </div>
-            )}
-
-            <Link to="/provider/products" className="btn-secondary text-xs py-2 px-4 w-full flex items-center justify-center gap-1.5">
-              <span>Manage Products</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-
-        </div>
-
-        {/* ── 8. OPPORTUNITIES FOR YOU ── */}
-        <div className="bg-white p-6 sm:p-8 rounded-3xl border border-[#E2E7E3] shadow-xs space-y-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[#E2E7E3] pb-4">
+          {/* ── 1. WELCOME HEADER ── */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <span className="badge-terracotta text-xs">Intelligent Matching Engine</span>
-              <h2 className="font-editorial text-2xl font-bold text-[#16382B]">Opportunities For You</h2>
-              <p className="text-slate-500 text-xs mt-0.5">Top customer requirements matched to your skills & location</p>
+              <span className="badge-sage uppercase tracking-wider text-[10px] font-bold">Livelihood Command Center</span>
+              <h1 className="font-editorial text-3xl sm:text-4xl font-bold text-[#16382B] mt-0.5">
+                Welcome back, {provider.name?.split(' ')[0]}!
+              </h1>
+              <p className="text-slate-600 text-sm mt-0.5">Here's what needs your attention today.</p>
             </div>
-            <Link to="/opportunities" className="btn-primary text-xs py-2.5 px-4 flex items-center gap-1.5">
-              <Search className="w-4 h-4" />
-              <span>Explore All ({opportunities.matchingCount})</span>
-            </Link>
+
+            <div className="flex items-center gap-3">
+              <Link to="/provider/services/new" className="btn-primary text-xs py-2.5 px-4 flex items-center gap-1.5 shadow-xs">
+                <PlusCircle className="w-4 h-4" /> Service
+              </Link>
+              <Link to="/provider/products/new" className="btn-secondary text-xs py-2.5 px-4 flex items-center gap-1.5">
+                <PlusCircle className="w-4 h-4" /> Product
+              </Link>
+            </div>
           </div>
 
-          {opportunities.topMatches && opportunities.topMatches.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {opportunities.topMatches.map((opp, idx) => (
-                <div key={idx} className="bg-[#FBF9F4] p-4 rounded-2xl border border-[#E2E7E3] space-y-3 flex flex-col justify-between shadow-2xs">
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-start gap-2">
-                      <span className="badge-sage text-[10px]">{opp.category}</span>
-                      <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold py-0.5 px-2 rounded-full">
-                        {opp.matchScore}% Match
-                      </span>
+          {/* ── 2. TOP SECTION (LEFT: PASSPORT, RIGHT: COPILOT) ── */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
+            
+            {/* LEFT: Compact Skill Passport */}
+            <div className="h-full">
+              <SkillPassportCard
+                provider={provider}
+                skills={skills}
+                servicesCount={services.active}
+                productsCount={products.active}
+                completedCount={applications.completed}
+                trust={reputation}
+                aiSummary={aiSummary}
+                onLocationClick={() => setMapOpen(true)}
+              />
+            </div>
+
+            {/* RIGHT: SilverHands Copilot / Next Action */}
+            <div className="bg-gradient-to-br from-emerald-950 via-[#16382B] to-emerald-900 text-white p-6 sm:p-8 rounded-3xl border border-emerald-800/80 shadow-lg flex flex-col justify-between space-y-6">
+              <div className="space-y-3">
+                <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-2">
+                    <div className="w-9 h-9 rounded-2xl bg-amber-400/20 border border-amber-300/40 flex items-center justify-center">
+                      <Bot className="w-5 h-5 text-amber-300 animate-pulse" />
                     </div>
-
-                    <h4 className="font-editorial text-base font-bold text-[#16382B] line-clamp-1">{opp.title}</h4>
-                    <p className="text-xs text-slate-500 font-semibold">
-                      📍 {opp.city} • <span className="text-[#16382B] font-bold">₹{opp.budget}</span> ({opp.budgetType})
-                    </p>
-
-                    {opp.reasons && opp.reasons.length > 0 && (
-                      <div className="bg-white p-2.5 rounded-xl border border-[#E2E7E3] text-[10px] text-slate-600 space-y-0.5">
-                        <span className="font-bold text-[#16382B] block">Why matched:</span>
-                        <p className="line-clamp-2 italic">"{opp.reasons[0]}"</p>
-                      </div>
-                    )}
+                    <div>
+                      <span className="font-editorial text-lg font-bold text-white block">SilverHands Copilot</span>
+                      <span className="text-[10px] text-emerald-200/80 font-medium">AI Contextual Livelihood Assistant</span>
+                    </div>
                   </div>
+                  <span className="bg-amber-400/20 text-amber-300 border border-amber-300/30 text-[9px] font-bold py-0.5 px-2.5 rounded-full uppercase shrink-0">
+                    Active Guidance
+                  </span>
+                </div>
 
-                  <Link to={`/opportunities/${opp.id}`} className="btn-secondary text-[11px] py-1.5 px-3 w-full text-center block">
-                    View Opportunity Details
+                <div className="bg-emerald-900/60 p-4 rounded-2xl border border-emerald-700/60 space-y-2">
+                  <div className="flex items-center gap-1.5 text-amber-300 text-xs font-bold">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Next Recommended Action</span>
+                  </div>
+                  <p className="text-xs text-emerald-100/90 leading-relaxed font-medium">
+                    {growthSuggestions?.[0]?.description || `Maintain active listings and profile completeness to maximize local client discoverability.`}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <Link
+                  to={growthSuggestions?.[0]?.actionRoute || '/opportunities'}
+                  className="btn-primary py-2.5 px-5 text-xs bg-amber-400 text-[#16382B] hover:bg-amber-300 font-bold shadow-md flex items-center gap-1.5 flex-1 justify-center"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>{growthSuggestions?.[0]?.actionLabel || 'Explore Opportunities'}</span>
+                </Link>
+                <Link
+                  to="/messages"
+                  className="btn-secondary py-2.5 px-4 text-xs bg-emerald-900 text-emerald-100 border-emerald-700 hover:bg-emerald-800 flex items-center gap-1.5"
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  <span>Messages</span>
+                </Link>
+              </div>
+            </div>
+
+          </div>
+
+          {/* ── 3. LIVELIHOOD SNAPSHOT ── */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="bg-white p-5 rounded-2xl border border-[#E2E7E3] shadow-2xs space-y-1">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Strong Matches</span>
+              <span className="font-editorial text-3xl font-bold text-[#16382B] block">{opportunities.matchingCount}</span>
+              <span className="text-[11px] text-emerald-700 font-semibold block">Relevant opportunities</span>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-[#E2E7E3] shadow-2xs space-y-1">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Submitted Applications</span>
+              <span className="font-editorial text-3xl font-bold text-[#16382B] block">{applications.total}</span>
+              <span className="text-[11px] text-amber-700 font-semibold block">{applications.pending} pending responses</span>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-[#E2E7E3] shadow-2xs space-y-1">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Active Services</span>
+              <span className="font-editorial text-3xl font-bold text-[#16382B] block">{services.active}</span>
+              <span className="text-[11px] text-slate-500 font-semibold block">{products.active} active products</span>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-[#E2E7E3] shadow-2xs space-y-1">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Completed Jobs</span>
+              <span className="font-editorial text-3xl font-bold text-[#16382B] block">{applications.completed}</span>
+              <span className="text-[11px] text-teal-700 font-semibold block">⭐ {reputation.rating} rating</span>
+            </div>
+          </div>
+
+          {/* ── 4. LIVELIHOOD SCORE & BREAKDOWN ── */}
+          <div className="bg-white rounded-3xl border border-[#E2E7E3] shadow-xs overflow-hidden">
+            <div className="px-6 sm:px-8 pt-7 pb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-5 border-b border-[#EEF1EE]">
+              <div className="space-y-1">
+                <span className="badge-sage text-xs">Readiness Engine</span>
+                <h2 className="font-editorial text-2xl sm:text-3xl font-bold text-[#16382B]">Livelihood Score Breakdown</h2>
+                <p className="text-slate-400 text-xs">Transparent readiness score calculated from real platform signals</p>
+              </div>
+
+              <div className="flex items-center gap-3 bg-gradient-to-br from-[#FFFBF4] to-[#FFF5E6] py-3 px-5 rounded-2xl border border-[#F5DFB8] shadow-sm shrink-0">
+                <Award className="w-7 h-7 text-[#C86D51]" />
+                <div>
+                  <span className="font-editorial text-2xl font-bold text-[#16382B] leading-none">{livelihoodScore.overall}</span>
+                  <span className="text-slate-400 text-sm font-semibold"> / 100</span>
+                  <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-0.5">Overall Livelihood Score</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-[#EEF1EE]">
+              <div className="bg-white px-6 py-5 space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
+                    <UserRound className="w-5 h-5 text-[#16382B]" />
+                  </div>
+                  <div className="flex-1 flex justify-between items-center">
+                    <span className="text-sm font-semibold text-slate-700">Profile Completeness</span>
+                    <span className="text-sm font-bold text-[#16382B]">{livelihoodScore.breakdown.profile}%</span>
+                  </div>
+                </div>
+                <div className="score-bar-track">
+                  <div className="score-bar-fill bg-[#16382B]" style={{ '--bar-pct': `${livelihoodScore.breakdown.profile}%` }} />
+                </div>
+                <span className="text-[11px] text-slate-400 block">Photo, bio, location, languages</span>
+              </div>
+
+              <div className="bg-white px-6 py-5 space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
+                    <GraduationCap className="w-5 h-5 text-emerald-600" />
+                  </div>
+                  <div className="flex-1 flex justify-between items-center">
+                    <span className="text-sm font-semibold text-slate-700">Skill Diversity</span>
+                    <span className="text-sm font-bold text-[#16382B]">{livelihoodScore.breakdown.skills}%</span>
+                  </div>
+                </div>
+                <div className="score-bar-track">
+                  <div className="score-bar-fill bg-emerald-500" style={{ '--bar-pct': `${livelihoodScore.breakdown.skills}%` }} />
+                </div>
+                <span className="text-[11px] text-slate-400 block">{skills.length} skills listed</span>
+              </div>
+
+              <div className="bg-white px-6 py-5 space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
+                    <Gift className="w-5 h-5 text-[#C86D51]" />
+                  </div>
+                  <div className="flex-1 flex justify-between items-center">
+                    <span className="text-sm font-semibold text-slate-700">Platform Offerings</span>
+                    <span className="text-sm font-bold text-[#16382B]">{livelihoodScore.breakdown.offerings}%</span>
+                  </div>
+                </div>
+                <div className="score-bar-track">
+                  <div className="score-bar-fill bg-[#C86D51]" style={{ '--bar-pct': `${livelihoodScore.breakdown.offerings}%` }} />
+                </div>
+                <span className="text-[11px] text-slate-400 block">{services.active} services, {products.active} products</span>
+              </div>
+
+              <div className="bg-white px-6 py-5 space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
+                    <Star className="w-5 h-5 text-amber-500" />
+                  </div>
+                  <div className="flex-1 flex justify-between items-center">
+                    <span className="text-sm font-semibold text-slate-700">Customer Trust</span>
+                    <span className="text-sm font-bold text-[#16382B]">{livelihoodScore.breakdown.trust}%</span>
+                  </div>
+                </div>
+                <div className="score-bar-track">
+                  <div className="score-bar-fill bg-amber-500" style={{ '--bar-pct': `${livelihoodScore.breakdown.trust}%` }} />
+                </div>
+                <span className="text-[11px] text-slate-400 block">{reputation.rating}★ avg rating ({reputation.reviewCount} reviews)</span>
+              </div>
+
+              <div className="bg-white px-6 py-5 space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center shrink-0">
+                    <ClipboardCheck className="w-5 h-5 text-teal-600" />
+                  </div>
+                  <div className="flex-1 flex justify-between items-center">
+                    <span className="text-sm font-semibold text-slate-700">Work Activity</span>
+                    <span className="text-sm font-bold text-[#16382B]">{livelihoodScore.breakdown.activity}%</span>
+                  </div>
+                </div>
+                <div className="score-bar-track">
+                  <div className="score-bar-fill bg-teal-500" style={{ '--bar-pct': `${livelihoodScore.breakdown.activity}%` }} />
+                </div>
+                <span className="text-[11px] text-slate-400 block">{applications.completed} completed, {applications.accepted} accepted</span>
+              </div>
+
+              <div className="bg-white px-6 py-5 space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
+                    <Target className="w-5 h-5 text-indigo-500" />
+                  </div>
+                  <div className="flex-1 flex justify-between items-center">
+                    <span className="text-sm font-semibold text-slate-700">Opportunity Matching</span>
+                    <span className="text-sm font-bold text-[#16382B]">{livelihoodScore.breakdown.matching}%</span>
+                  </div>
+                </div>
+                <div className="score-bar-track">
+                  <div className="score-bar-fill bg-indigo-500" style={{ '--bar-pct': `${livelihoodScore.breakdown.matching}%` }} />
+                </div>
+                <span className="text-[11px] text-slate-400 block">{opportunities.matchingCount} matching opportunities</span>
+              </div>
+            </div>
+          </div>
+
+          {/* ── 5. AI SKILL GAP SECTION ── */}
+          <SkillGapSection />
+
+          {/* ── 6. OFFERINGS OVERVIEW SUMMARY (No Duplication) ── */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            
+            {/* Services Overview */}
+            <div className="bg-white p-6 rounded-3xl border border-[#E2E7E3] shadow-xs space-y-4 flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-200 text-[#16382B] flex items-center justify-center">
+                      <Briefcase className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-editorial text-xl font-bold text-[#16382B]">My Services</h3>
+                      <span className="text-xs text-slate-500 font-semibold">{services.active} Active Published Services</span>
+                    </div>
+                  </div>
+                  <Link to="/provider/services/new" className="text-[#C86D51] font-bold text-xs hover:underline flex items-center gap-1">
+                    <PlusCircle className="w-3.5 h-3.5" /> + New
                   </Link>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8 bg-[#FBF9F4] rounded-2xl border border-dashed border-[#E2E7E3]">
-              <p className="text-xs text-slate-500">No matching opportunities found right now. Check back soon!</p>
-            </div>
-          )}
-        </div>
 
-        {/* ── 9. APPLICATION BREAKDOWN & ESTIMATED WORK VALUE ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* Applications Status Breakdown (2 Columns) */}
-          <div className="lg:col-span-2 bg-white p-6 sm:p-8 rounded-3xl border border-[#E2E7E3] shadow-xs space-y-6">
-            <div className="flex justify-between items-center border-b border-[#E2E7E3] pb-4">
-              <div>
-                <h3 className="font-editorial text-2xl font-bold text-[#16382B]">Application Activity</h3>
-                <p className="text-slate-500 text-xs">Track the status of your submitted job applications</p>
+                {services.items && services.items.length > 0 ? (
+                  <div className="space-y-2">
+                    {services.items.slice(0, 2).map((svc, i) => (
+                      <div key={i} className="bg-[#FBF9F4] p-3 rounded-2xl border border-[#E2E7E3] flex justify-between items-center text-xs">
+                        <span className="font-bold text-[#16382B]">{svc.title}</span>
+                        <span className="font-editorial font-bold text-[#16382B]">₹{svc.price}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-500 italic py-2">No services published yet.</p>
+                )}
               </div>
-              <Link to="/applications/my" className="btn-secondary text-xs py-2 px-3.5">
-                View Applications
+
+              <Link to="/provider/services" className="btn-secondary text-xs py-2.5 px-4 w-full text-center flex items-center justify-center gap-1.5">
+                <span>Manage Services</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div className="bg-[#FBF9F4] p-4 rounded-2xl border border-[#E2E7E3] text-center space-y-1">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Total Applied</span>
-                <span className="font-editorial text-2xl font-bold text-[#16382B]">{applications.total}</span>
-              </div>
-              <div className="bg-amber-50/60 p-4 rounded-2xl border border-amber-200/60 text-center space-y-1">
-                <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider block">Pending</span>
-                <span className="font-editorial text-2xl font-bold text-amber-800">{applications.pending}</span>
-              </div>
-              <div className="bg-emerald-50/60 p-4 rounded-2xl border border-emerald-200/60 text-center space-y-1">
-                <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">Accepted</span>
-                <span className="font-editorial text-2xl font-bold text-emerald-800">{applications.accepted}</span>
-              </div>
-              <div className="bg-teal-50/60 p-4 rounded-2xl border border-teal-200/60 text-center space-y-1">
-                <span className="text-[10px] font-bold text-teal-800 uppercase tracking-wider block">Completed</span>
-                <span className="font-editorial text-2xl font-bold text-teal-800">{applications.completed}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Estimated Livelihood Activity Value */}
-          <div className="bg-white p-6 sm:p-8 rounded-3xl border border-[#E2E7E3] shadow-xs space-y-6 flex flex-col justify-between">
-            <div className="space-y-4">
-              <div>
-                <span className="badge-terracotta text-xs">Work Value</span>
-                <h3 className="font-editorial text-xl font-bold text-[#16382B]">Estimated Service Value</h3>
-                <p className="text-slate-500 text-xs">Estimated value of your accepted & completed work</p>
-              </div>
-
-              <div className="bg-[#FBF9F4] p-5 rounded-2xl border border-[#E2E7E3] space-y-3 text-center">
-                <span className="text-xs text-slate-500 font-semibold block">Total Service Value</span>
-                <span className="font-editorial text-3xl font-bold text-[#16382B]">
-                  ₹{livelihoodActivity.totalEstimatedValue.toLocaleString()}
-                </span>
-                <div className="pt-2 border-t border-[#E2E7E3] grid grid-cols-2 text-xs">
-                  <div>
-                    <span className="text-[10px] text-slate-400 block">Avg Job Value</span>
-                    <span className="font-bold text-[#16382B]">₹{livelihoodActivity.averageJobValue}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 block">Jobs Count</span>
-                    <span className="font-bold text-[#16382B]">{livelihoodActivity.completedOrAcceptedCount}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-        {/* ── 10. GROWTH SUGGESTIONS & RECENT ACTIVITY ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          
-          {/* Growth Suggestions */}
-          <div className="bg-white p-6 sm:p-8 rounded-3xl border border-[#E2E7E3] shadow-xs space-y-4">
-            <div>
-              <h3 className="font-editorial text-xl font-bold text-[#16382B] flex items-center gap-2">
-                <span>Grow Your Livelihood</span>
-                <TrendingUp className="w-5 h-5 text-[#C86D51]" />
-              </h3>
-              <p className="text-slate-500 text-xs">Actionable recommendations based on your profile signals</p>
-            </div>
-
-            {growthSuggestions && growthSuggestions.length > 0 ? (
+            {/* Products Overview */}
+            <div className="bg-white p-6 rounded-3xl border border-[#E2E7E3] shadow-xs space-y-4 flex flex-col justify-between">
               <div className="space-y-3">
-                {growthSuggestions.map((sug) => (
-                  <div key={sug.id} className="bg-[#FBF9F4] p-4 rounded-2xl border border-[#E2E7E3] flex justify-between items-center gap-3">
-                    <div>
-                      <h4 className="font-bold text-xs text-[#16382B]">{sug.title}</h4>
-                      <p className="text-[11px] text-slate-500 leading-normal">{sug.description}</p>
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 flex items-center justify-center">
+                      <Package className="w-5 h-5" />
                     </div>
-                    <button
-                      onClick={() => navigate(sug.actionRoute)}
-                      className="btn-primary text-[10px] py-1.5 px-3 shrink-0"
-                    >
-                      {sug.actionLabel}
-                    </button>
+                    <div>
+                      <h3 className="font-editorial text-xl font-bold text-[#16382B]">My Products</h3>
+                      <span className="text-xs text-slate-500 font-semibold">{products.active} Active Handmade Products</span>
+                    </div>
                   </div>
-                ))}
+                  <Link to="/provider/products/new" className="text-[#C86D51] font-bold text-xs hover:underline flex items-center gap-1">
+                    <PlusCircle className="w-3.5 h-3.5" /> + New
+                  </Link>
+                </div>
+
+                {products.items && products.items.length > 0 ? (
+                  <div className="space-y-2">
+                    {products.items.slice(0, 2).map((prd, i) => (
+                      <div key={i} className="bg-[#FBF9F4] p-3 rounded-2xl border border-[#E2E7E3] flex justify-between items-center text-xs">
+                        <span className="font-bold text-[#16382B]">{prd.name}</span>
+                        <span className="font-editorial font-bold text-[#16382B]">₹{prd.price} / {prd.unit}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-500 italic py-2">No products listed yet.</p>
+                )}
               </div>
-            ) : (
-              <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-200 text-xs text-emerald-900">
-                🎉 Great job! You have satisfied all growth recommendations for your profile.
-              </div>
-            )}
+
+              <Link to="/provider/products" className="btn-secondary text-xs py-2.5 px-4 w-full text-center flex items-center justify-center gap-1.5">
+                <span>Manage Products</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+
           </div>
 
-          {/* Recent Activity Timeline */}
+          {/* ── 7. RECENT PLATFORM ACTIVITY TIMELINE ── */}
           <div className="bg-white p-6 sm:p-8 rounded-3xl border border-[#E2E7E3] shadow-xs space-y-4">
             <div>
               <h3 className="font-editorial text-xl font-bold text-[#16382B] flex items-center gap-2">
                 <span>Recent Platform Activity</span>
                 <Clock className="w-5 h-5 text-[#16382B]" />
               </h3>
-              <p className="text-slate-500 text-xs">Timeline of events from your account</p>
+              <p className="text-slate-500 text-xs">Real timeline of activity on your account</p>
             </div>
 
             {recentActivity && recentActivity.length > 0 ? (
               <div className="space-y-3">
                 {recentActivity.map((act, i) => (
                   <div key={i} className="flex items-center gap-3 bg-[#FBF9F4] p-3 rounded-2xl border border-[#E2E7E3]">
-                    <div className="w-2 h-2 rounded-full bg-[#16382B] shrink-0" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-[#16382B] shrink-0" />
                     <div className="flex-1 min-w-0">
                       <span className="font-semibold text-xs text-[#16382B] block truncate">{act.title}</span>
                       <span className="text-[10px] text-slate-400">
@@ -626,38 +436,14 @@ export default function ProviderLivelihoodDashboardPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-slate-500 italic py-4">No recent activity logged yet.</p>
+              <p className="text-xs text-slate-500 italic py-4">Your recent activity will appear here.</p>
             )}
           </div>
 
         </div>
-
-        {/* ── 11. QUICK ACTIONS TOOLBAR ── */}
-        <div className="bg-white p-6 rounded-3xl border border-[#E2E7E3] shadow-xs space-y-4">
-          <h3 className="font-editorial text-xl font-bold text-[#16382B]">Quick Actions</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-            <Link to="/provider/services/new" className="btn-primary text-xs py-2.5 px-3 text-center flex items-center justify-center gap-1.5">
-              <PlusCircle className="w-4 h-4" /> + Service
-            </Link>
-            <Link to="/provider/products/new" className="btn-secondary text-xs py-2.5 px-3 text-center flex items-center justify-center gap-1.5">
-              <PlusCircle className="w-4 h-4" /> + Product
-            </Link>
-            <Link to="/opportunities" className="btn-secondary text-xs py-2.5 px-3 text-center flex items-center justify-center gap-1.5">
-              <Search className="w-4 h-4" /> Opportunities
-            </Link>
-            <Link to="/onboarding" className="btn-secondary text-xs py-2.5 px-3 text-center flex items-center justify-center gap-1.5">
-              <UserCheck className="w-4 h-4" /> Edit Profile
-            </Link>
-            <Link to="/applications/my" className="btn-secondary text-xs py-2.5 px-3 text-center flex items-center justify-center gap-1.5">
-              <FileText className="w-4 h-4" /> Applications
-            </Link>
-          </div>
-        </div>
-
       </div>
-    </div>
 
-    {mapOpen && <LocationMapModal user={provider} onClose={() => setMapOpen(false)} />}
+      {mapOpen && <LocationMapModal user={provider} onClose={() => setMapOpen(false)} />}
     </>
   );
 }

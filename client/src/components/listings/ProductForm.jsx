@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowRight, AlertCircle, Check, Eye, Package, Tag, Image as ImageIcon } from 'lucide-react';
+import { ArrowRight, AlertCircle, Check, Eye, Package, Tag, Image as ImageIcon, Upload, Trash2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 const productCategories = [
@@ -59,6 +59,29 @@ export default function ProductForm({ initialData = {}, onSubmit, loading, isEdi
   const handleUpdateImage = (url) => {
     setFormData({ ...formData, images: [url] });
     setImageUrlInput(url);
+  };
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!['image/jpeg', 'image/png', 'image/jpg', 'image/webp'].includes(file.type)) {
+      setError('Please upload a valid image file (JPG, PNG, WEBP).');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        handleUpdateImage(event.target.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveImage = () => {
+    setFormData({ ...formData, images: [sampleProductImages[0]] });
+    setImageUrlInput('');
   };
 
   const handleSubmit = (targetStatus = 'published') => {
@@ -211,36 +234,56 @@ export default function ProductForm({ initialData = {}, onSubmit, loading, isEdi
           />
         </div>
 
-        {/* Image Preview & URL */}
+        {/* Product Photos Upload & Preview */}
         <div className="space-y-3">
           <label className="block text-sm font-semibold text-[#16382B]">
-            Product Image
+            Product Photos
           </label>
-          <div className="flex items-center gap-4 flex-wrap">
-            <img
-              src={formData.images[0]}
-              alt="Product Preview"
-              className="w-24 h-24 rounded-2xl object-cover border border-[#E2E7E3] shadow-xs"
-            />
-            <div className="space-y-2 flex-1 min-w-[200px]">
-              <p className="text-xs text-slate-500">Image URL or choose a sample image:</p>
-              <input
-                type="text"
-                value={imageUrlInput}
-                onChange={(e) => handleUpdateImage(e.target.value)}
-                placeholder="https://..."
-                className="input-editorial text-xs py-2"
+          <div className="flex items-start gap-4 flex-wrap bg-[#FBF9F4] p-4 rounded-2xl border border-[#E2E7E3]">
+            <div className="relative group">
+              <img
+                src={formData.images[0]}
+                alt="Product Preview"
+                className="w-28 h-28 rounded-2xl object-cover border border-[#E2E7E3] shadow-xs"
               />
-              <div className="flex gap-2">
-                {sampleProductImages.map((img, idx) => (
-                  <img
-                    key={idx}
-                    src={img}
-                    alt={`Sample ${idx + 1}`}
-                    onClick={() => handleUpdateImage(img)}
-                    className="w-10 h-10 rounded-lg object-cover cursor-pointer border hover:border-[#16382B]"
+              <button
+                type="button"
+                onClick={handleRemoveImage}
+                className="absolute top-1 right-1 p-1 bg-red-600 text-white rounded-full opacity-90 hover:opacity-100 shadow-sm"
+                title="Remove Photo"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 flex-1 min-w-[200px]">
+              <div>
+                <label className="btn-secondary text-xs py-2 px-4 inline-flex items-center gap-2 cursor-pointer bg-white">
+                  <Upload className="w-4 h-4 text-[#16382B]" />
+                  <span>+ Add Product Photos</span>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handleFileUpload}
+                    className="hidden"
                   />
-                ))}
+                </label>
+                <span className="text-[11px] text-slate-400 block mt-1">Supports JPG, PNG, WEBP files</span>
+              </div>
+
+              <div className="space-y-1">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Or select sample image:</span>
+                <div className="flex gap-2">
+                  {sampleProductImages.map((img, idx) => (
+                    <img
+                      key={idx}
+                      src={img}
+                      alt={`Sample ${idx + 1}`}
+                      onClick={() => handleUpdateImage(img)}
+                      className={`w-10 h-10 rounded-lg object-cover cursor-pointer border ${formData.images[0] === img ? 'border-2 border-[#16382B]' : 'border-slate-200 hover:border-[#16382B]'}`}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -305,10 +348,6 @@ export default function ProductForm({ initialData = {}, onSubmit, loading, isEdi
                 </div>
               </div>
               <p className="text-xs text-slate-600 italic mt-1 font-normal">"{formData.description || 'Description preview...'}"</p>
-              <div className="flex items-center gap-4 text-xs font-semibold text-slate-500 pt-2 border-t border-[#E2E7E3] mt-2">
-                <span>📦 {formData.quantity} {formData.unit}s available</span>
-                <span>📍 {formData.location?.city || 'Chennai'}</span>
-              </div>
             </div>
           </div>
         </div>
