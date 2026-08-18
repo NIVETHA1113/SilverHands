@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { calculateProfileCompletion } from '../utils/profileUtils';
 import api from '../services/api';
 import ProviderLivelihoodDashboardPage from './provider/ProviderLivelihoodDashboardPage';
 import LocationMapModal from '../components/LocationMapModal';
-import { ShieldCheck, Star, Sparkles, MapPin, Search, Utensils, Scissors, BookOpen, Gift, Sprout, ArrowRight, CheckCircle2, Briefcase, Package, Plus, Eye, Compass, UserCheck } from 'lucide-react';
+import useVoiceSearch from '../hooks/useVoiceSearch';
+import { ShieldCheck, Star, Sparkles, MapPin, Search, Utensils, Scissors, BookOpen, Gift, Sprout, ArrowRight, CheckCircle2, Briefcase, Package, Plus, Eye, Compass, UserCheck, Mic } from 'lucide-react';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -21,6 +22,14 @@ export default function DashboardPage() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [mapOpen, setMapOpen] = useState(false);
+
+  const handleVoiceResult = useCallback((text) => {
+    setSearchQuery(text);
+    // Trigger search immediately after voice input
+    if (text.trim()) navigate(`/explore?q=${encodeURIComponent(text.trim())}`);
+  }, [navigate]);
+
+  const { listening: micListening, supported: micSupported, toggle: toggleMic } = useVoiceSearch(handleVoiceResult);
 
   const handleCustomerSearch = (e) => {
     e.preventDefault();
@@ -102,8 +111,22 @@ export default function DashboardPage() {
                   placeholder="Search traditional skills, tutors, or homemade goods..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="input-editorial pl-12"
+                  className="input-editorial pl-12 pr-12"
                 />
+                {micSupported && (
+                  <button
+                    type="button"
+                    onClick={toggleMic}
+                    aria-label={micListening ? 'Stop voice search' : 'Search by voice'}
+                    title={micListening ? 'Listening… click to stop' : 'Search by voice'}
+                    className={`absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full transition-colors ${micListening ? 'mic-listening text-red-500 bg-red-50' : 'text-slate-400 hover:text-[#16382B] hover:bg-[#F0F4F1]'}`}
+                  >
+                    {micListening && (
+                      <span className="mic-ripple absolute inset-0 rounded-full bg-red-400 opacity-0" />
+                    )}
+                    <Mic className="w-4 h-4 relative z-10" />
+                  </button>
+                )}
               </div>
               <button
                 type="submit"

@@ -24,7 +24,12 @@ import {
   Activity,
   Layers,
   Search,
-  Bot
+  Bot,
+  UserRound,
+  GraduationCap,
+  Gift,
+  ClipboardCheck,
+  Target
 } from 'lucide-react';
 
 export default function ProviderLivelihoodDashboardPage() {
@@ -154,91 +159,132 @@ export default function ProviderLivelihoodDashboardPage() {
         </div>
 
         {/* ── 4. LIVELIHOOD SCORE & BREAKDOWN ── */}
-        <div className="bg-white p-6 sm:p-8 rounded-3xl border border-[#E2E7E3] shadow-xs space-y-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[#E2E7E3] pb-4">
-            <div>
+        <div className="bg-white rounded-3xl border border-[#E2E7E3] shadow-sm overflow-hidden">
+
+          {/* Card header */}
+          <div className="px-6 sm:px-8 pt-7 pb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-5 border-b border-[#EEF1EE]">
+            <div className="space-y-1">
               <span className="badge-sage text-xs">Readiness Engine</span>
-              <h2 className="font-editorial text-2xl font-bold text-[#16382B]">Livelihood Score Breakdown</h2>
-              <p className="text-slate-500 text-xs mt-0.5">Transparent readiness score calculated from real platform signals</p>
+              <h2 className="font-editorial text-2xl sm:text-3xl font-bold text-[#16382B]">Livelihood Score Breakdown</h2>
+              <p className="text-slate-400 text-xs">Transparent readiness score calculated from real platform signals</p>
             </div>
-            <div className="flex items-center gap-2 bg-[#FBF9F4] py-2 px-4 rounded-2xl border border-[#E2E7E3]">
-              <Award className="w-5 h-5 text-[#C86D51]" />
-              <span className="font-editorial text-xl font-bold text-[#16382B]">{livelihoodScore.overall} / 100</span>
+
+            {/* Score badge — medal animates, score text is static */}
+            <div className="flex items-center gap-3 bg-gradient-to-br from-[#FFFBF4] to-[#FFF5E6] py-3 px-5 rounded-2xl border border-[#F5DFB8] shadow-sm shrink-0">
+              <span className="award-icon-wrap">
+                <Award className="w-7 h-7 text-[#C86D51]" />
+              </span>
+              <div>
+                <span className="font-editorial text-2xl font-bold text-[#16382B] leading-none">{livelihoodScore.overall}</span>
+                <span className="text-slate-400 text-sm font-semibold"> / 100</span>
+                <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-0.5">Overall Livelihood Score</p>
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            
+          {/* Metrics grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-[#EEF1EE]">
+
             {/* Profile Completeness */}
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs font-semibold">
-                <span className="text-slate-700">Profile Completeness</span>
-                <span className="text-[#16382B] font-bold">{livelihoodScore.breakdown.profile}%</span>
+            <div className="bg-white px-6 py-5 space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
+                  <UserRound className="w-5 h-5 text-[#16382B]" />
+                </div>
+                <div className="flex-1 flex justify-between items-center">
+                  <span className="text-sm font-semibold text-slate-700">Profile Completeness</span>
+                  <span className="text-sm font-bold text-[#16382B]">{livelihoodScore.breakdown.profile}%</span>
+                </div>
               </div>
-              <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                <div className="bg-[#16382B] h-full rounded-full transition-all duration-500" style={{ width: `${livelihoodScore.breakdown.profile}%` }} />
+              <div className="score-bar-track">
+                <div className="score-bar-fill bg-[#16382B]" style={{ '--bar-pct': `${livelihoodScore.breakdown.profile}%` }} />
               </div>
-              <span className="text-[10px] text-slate-500 block">Photo, bio, location, languages</span>
+              <span className="text-[11px] text-slate-400 block">Photo, bio, location, languages</span>
             </div>
 
             {/* Skill Diversity */}
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs font-semibold">
-                <span className="text-slate-700">Skill Diversity</span>
-                <span className="text-[#16382B] font-bold">{livelihoodScore.breakdown.skills}%</span>
+            <div className="bg-white px-6 py-5 space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
+                  <GraduationCap className="w-5 h-5 text-emerald-600" />
+                </div>
+                <div className="flex-1 flex justify-between items-center">
+                  <span className="text-sm font-semibold text-slate-700">Skill Diversity</span>
+                  <span className="text-sm font-bold text-[#16382B]">{livelihoodScore.breakdown.skills}%</span>
+                </div>
               </div>
-              <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                <div className="bg-emerald-600 h-full rounded-full transition-all duration-500" style={{ width: `${livelihoodScore.breakdown.skills}%` }} />
+              <div className="score-bar-track">
+                <div className="score-bar-fill bg-emerald-500" style={{ '--bar-pct': `${livelihoodScore.breakdown.skills}%` }} />
               </div>
-              <span className="text-[10px] text-slate-500 block">{skills.length} skills listed</span>
+              <span className="text-[11px] text-slate-400 block">{skills.length} skills listed</span>
             </div>
 
             {/* Platform Offerings */}
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs font-semibold">
-                <span className="text-slate-700">Platform Offerings</span>
-                <span className="text-[#16382B] font-bold">{livelihoodScore.breakdown.offerings}%</span>
+            <div className="bg-white px-6 py-5 space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center shrink-0">
+                  <Gift className="w-5 h-5 text-violet-500" />
+                </div>
+                <div className="flex-1 flex justify-between items-center">
+                  <span className="text-sm font-semibold text-slate-700">Platform Offerings</span>
+                  <span className="text-sm font-bold text-[#16382B]">{livelihoodScore.breakdown.offerings}%</span>
+                </div>
               </div>
-              <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                <div className="bg-[#C86D51] h-full rounded-full transition-all duration-500" style={{ width: `${livelihoodScore.breakdown.offerings}%` }} />
+              <div className="score-bar-track">
+                <div className="score-bar-fill bg-[#C86D51]" style={{ '--bar-pct': `${livelihoodScore.breakdown.offerings}%` }} />
               </div>
-              <span className="text-[10px] text-slate-500 block">{services.active} services, {products.active} products</span>
+              <span className="text-[11px] text-slate-400 block">{services.active} services, {products.active} products</span>
             </div>
 
             {/* Customer Trust */}
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs font-semibold">
-                <span className="text-slate-700">Customer Trust</span>
-                <span className="text-[#16382B] font-bold">{livelihoodScore.breakdown.trust}%</span>
+            <div className="bg-white px-6 py-5 space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
+                  <Star className="w-5 h-5 text-amber-500" />
+                </div>
+                <div className="flex-1 flex justify-between items-center">
+                  <span className="text-sm font-semibold text-slate-700">Customer Trust</span>
+                  <span className="text-sm font-bold text-[#16382B]">{livelihoodScore.breakdown.trust}%</span>
+                </div>
               </div>
-              <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                <div className="bg-amber-500 h-full rounded-full transition-all duration-500" style={{ width: `${livelihoodScore.breakdown.trust}%` }} />
+              <div className="score-bar-track">
+                <div className="score-bar-fill bg-amber-500" style={{ '--bar-pct': `${livelihoodScore.breakdown.trust}%` }} />
               </div>
-              <span className="text-[10px] text-slate-500 block">{reputation.rating}★ avg rating ({reputation.reviewCount} reviews)</span>
+              <span className="text-[11px] text-slate-400 block">{reputation.rating}★ avg rating ({reputation.reviewCount} reviews)</span>
             </div>
 
             {/* Work Activity */}
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs font-semibold">
-                <span className="text-slate-700">Work Activity</span>
-                <span className="text-[#16382B] font-bold">{livelihoodScore.breakdown.activity}%</span>
+            <div className="bg-white px-6 py-5 space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center shrink-0">
+                  <ClipboardCheck className="w-5 h-5 text-teal-600" />
+                </div>
+                <div className="flex-1 flex justify-between items-center">
+                  <span className="text-sm font-semibold text-slate-700">Work Activity</span>
+                  <span className="text-sm font-bold text-[#16382B]">{livelihoodScore.breakdown.activity}%</span>
+                </div>
               </div>
-              <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                <div className="bg-teal-600 h-full rounded-full transition-all duration-500" style={{ width: `${livelihoodScore.breakdown.activity}%` }} />
+              <div className="score-bar-track">
+                <div className="score-bar-fill bg-teal-500" style={{ '--bar-pct': `${livelihoodScore.breakdown.activity}%` }} />
               </div>
-              <span className="text-[10px] text-slate-500 block">{applications.completed} completed, {applications.accepted} accepted</span>
+              <span className="text-[11px] text-slate-400 block">{applications.completed} completed, {applications.accepted} accepted</span>
             </div>
 
-            {/* Opportunity Readiness */}
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs font-semibold">
-                <span className="text-slate-700">Opportunity Matching</span>
-                <span className="text-[#16382B] font-bold">{livelihoodScore.breakdown.matching}%</span>
+            {/* Opportunity Matching */}
+            <div className="bg-white px-6 py-5 space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
+                  <Target className="w-5 h-5 text-indigo-500" />
+                </div>
+                <div className="flex-1 flex justify-between items-center">
+                  <span className="text-sm font-semibold text-slate-700">Opportunity Matching</span>
+                  <span className="text-sm font-bold text-[#16382B]">{livelihoodScore.breakdown.matching}%</span>
+                </div>
               </div>
-              <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                <div className="bg-indigo-600 h-full rounded-full transition-all duration-500" style={{ width: `${livelihoodScore.breakdown.matching}%` }} />
+              <div className="score-bar-track">
+                <div className="score-bar-fill bg-indigo-500" style={{ '--bar-pct': `${livelihoodScore.breakdown.matching}%` }} />
               </div>
-              <span className="text-[10px] text-slate-500 block">{opportunities.matchingCount} matching opportunities</span>
+              <span className="text-[11px] text-slate-400 block">{opportunities.matchingCount} matching opportunities</span>
             </div>
 
           </div>

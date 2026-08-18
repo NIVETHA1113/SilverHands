@@ -145,7 +145,7 @@ export default function OpportunitiesListPage() {
             <button
               type="button"
               onClick={() => setShowFilters(!showFilters)}
-              className={`btn-secondary text-sm py-3 px-5 ${showFilters ? 'border-[#16382B] text-[#16382B]' : ''}`}
+              className="btn-primary text-sm py-3 px-5"
             >
               <Filter className="w-4 h-4" />
               <span>Filters</span>
