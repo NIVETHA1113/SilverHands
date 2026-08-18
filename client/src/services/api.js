@@ -90,3 +90,22 @@ export const reviewAPI = {
   getProviderReviews: (providerId) => api.get(`/users/${providerId}/reviews`),
   getProviderTrust: (providerId) => api.get(`/users/${providerId}/trust`),
 };
+
+// ─── AI API ───────────────────────────────────────────────────────────────────
+
+export const aiAPI = {
+  extractSkills: (text) => api.post('/ai/extract-skills', { text }),
+  generateProfile: (data) => api.post('/ai/generate-profile', data),
+  generateServiceDescription: (data) => api.post('/ai/generate-service-description', data),
+  extractRequirement: (text) => api.post('/ai/extract-requirement', { text }),
+  explainMatch: (data) => api.post('/ai/explain-match', data),
+  improveDescription: (data) => api.post('/ai/improve-description', data),
+};
+
+// ─── Message API ──────────────────────────────────────────────────────────────
+
+export const messageAPI = {
+  send: (data) => api.post('/messages', data),
+  getMy: () => api.get('/messages/my'),
+  markRead: (id) => api.patch(`/messages/${id}/read`),
+};

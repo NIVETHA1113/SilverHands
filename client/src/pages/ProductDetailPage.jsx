@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, MapPin, Package, ShieldCheck, Star, MessageSquare, Tag } from 'lucide-react';
 import api from '../services/api';
+import ContactProviderModal from '../components/ContactProviderModal';
 import { useAuth } from '../contexts/AuthContext';
 import { calculateDistance } from '../utils/haversine';
 
@@ -13,7 +14,7 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [contactNotice, setContactNotice] = useState(false);
+  const [contactModalOpen, setContactModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchProductDetail = async () => {
@@ -151,7 +152,7 @@ export default function ProductDetailPage() {
                     <ShieldCheck className="w-4 h-4 text-emerald-700" />
                   </div>
                   <p className="text-xs text-slate-600 font-semibold">
-                    📍 {provider.location?.city || 'Chennai'} • Age {provider.age || 60}
+                    📍 {provider.location?.city || 'Chennai'}
                   </p>
                   <p className="text-xs text-[#C07A46] font-bold flex items-center gap-1 mt-0.5">
                     <Star className="w-3.5 h-3.5 fill-current" /> {provider.rating || 4.8} Trusted Seller
@@ -167,16 +168,9 @@ export default function ProductDetailPage() {
               </Link>
             </div>
 
-            {/* Action Notice */}
-            {contactNotice && (
-              <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs font-semibold">
-                ℹ️ Direct customer purchase system will open in Phase 5. You can view {provider.name}'s verified profile today!
-              </div>
-            )}
-
             <button
               disabled={isOutOfStock}
-              onClick={() => setContactNotice(true)}
+              onClick={() => setContactModalOpen(true)}
               className={`w-full py-3.5 text-sm flex items-center justify-center gap-2 rounded-xl font-semibold transition-all ${
                 isOutOfStock
                   ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
@@ -191,6 +185,13 @@ export default function ProductDetailPage() {
         </div>
 
       </div>
+
+      {contactModalOpen && (
+        <ContactProviderModal
+          provider={provider}
+          onClose={() => setContactModalOpen(false)}
+        />
+      )}
     </div>
   );
 }

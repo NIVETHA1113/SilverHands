@@ -17,6 +17,7 @@ import searchRoutes from './routes/searchRoutes.js';
 import chatbotRoutes from './routes/chatbotRoutes.js';
 import providerDashboardRoutes from './routes/providerDashboardRoutes.js';
 import skillGapRoutes from './routes/skillGapRoutes.js';
+import messageRoutes from './routes/messageRoutes.js';
 
 dotenv.config();
 
@@ -52,34 +53,17 @@ app.use('/api/search', searchRoutes);
 app.use('/api/chatbot', chatbotRoutes);
 app.use('/api/providers', providerDashboardRoutes);
 app.use('/api/providers', skillGapRoutes);
+app.use('/api/messages', messageRoutes);
 app.use('/api/users', reviewRoutes); // mounts /api/users/:id/reviews & /api/users/:id/trust
 
 // Health Check Route
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
-    message: 'SilverHands API is running successfully',
     timestamp: new Date().toISOString()
   });
 });
 
-// 404 Handler
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: `Route not found - ${req.originalUrl}`
-  });
-});
-
-// Global Error Handler
-app.use((err, req, res, next) => {
-  console.error('[Server Error]:', err.stack);
-  res.status(err.status || 500).json({
-    success: false,
-    message: err.message || 'Internal Server Error'
-  });
-});
-
 app.listen(PORT, () => {
-  console.log(`[SilverHands Server] Running on http://localhost:${PORT}`);
+  console.log(`🚀 SilverHands server running on port ${PORT}`);
 });

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, ArrowRight, AlertCircle, MapPin, Clock, Tag, Check, Eye } from 'lucide-react';
+import { Sparkles, ArrowRight, AlertCircle, MapPin, Clock, Tag, Check, Eye, Upload, Trash2, Image as ImageIcon } from 'lucide-react';
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -23,6 +23,12 @@ const serviceCategories = [
 const priceTypes = ['Per Hour', 'Per Session', 'Per Item', 'Starting From', 'Custom'];
 const deliveryModeOptions = ['Online', 'In Person', 'Home Based', 'Customer Location'];
 
+const sampleServiceImages = [
+  'https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&q=80&w=600',
+  'https://images.unsplash.com/photo-1584992236310-6edddc08acff?auto=format&fit=crop&q=80&w=600',
+  'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&q=80&w=600'
+];
+
 export default function ServiceForm({ initialData = {}, onSubmit, loading, isEdit = false }) {
   const { user } = useAuth();
 
@@ -36,13 +42,14 @@ export default function ServiceForm({ initialData = {}, onSubmit, loading, isEdi
     location: initialData.location || (user?.location || { city: 'Chennai', state: 'Tamil Nadu', country: 'India' }),
     availability: initialData.availability || (user?.availability || { days: ['Saturday', 'Sunday'], timePreferences: ['Flexible'] }),
     deliveryMode: initialData.deliveryMode || ['Home Based'],
-    images: initialData.images || ['https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&q=80&w=600'],
+    images: initialData.images || [sampleServiceImages[0]],
     status: initialData.status || 'published'
   });
 
   const [error, setError] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [imageUrlInput, setImageUrlInput] = useState(formData.images[0] || '');
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -55,6 +62,34 @@ export default function ServiceForm({ initialData = {}, onSubmit, loading, isEdi
     } else {
       setFormData({ ...formData, deliveryMode: [...formData.deliveryMode, mode] });
     }
+  };
+
+  const handleUpdateImage = (url) => {
+    setFormData({ ...formData, images: [url] });
+    setImageUrlInput(url);
+  };
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!['image/jpeg', 'image/png', 'image/jpg', 'image/webp'].includes(file.type)) {
+      setError('Please upload a valid image file (JPG, PNG, WEBP).');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        handleUpdateImage(event.target.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveImage = () => {
+    setFormData({ ...formData, images: [sampleServiceImages[0]] });
+    setImageUrlInput('');
   };
 
   const handleImproveWithAi = async () => {
@@ -181,6 +216,61 @@ export default function ServiceForm({ initialData = {}, onSubmit, loading, isEdi
           />
         </div>
 
+        {/* Service Photos Upload & Preview */}
+        <div className="space-y-3">
+          <label className="block text-sm font-semibold text-[#16382B]">
+            Service Photos
+          </label>
+          <div className="flex items-start gap-4 flex-wrap bg-[#FBF9F4] p-4 rounded-2xl border border-[#E2E7E3]">
+            <div className="relative group">
+              <img
+                src={formData.images[0]}
+                alt="Service Preview"
+                className="w-28 h-28 rounded-2xl object-cover border border-[#E2E7E3] shadow-xs"
+              />
+              <button
+                type="button"
+                onClick={handleRemoveImage}
+                className="absolute top-1 right-1 p-1 bg-red-600 text-white rounded-full opacity-90 hover:opacity-100 shadow-sm"
+                title="Remove Photo"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 flex-1 min-w-[200px]">
+              <div>
+                <label className="btn-secondary text-xs py-2 px-4 inline-flex items-center gap-2 cursor-pointer bg-white">
+                  <Upload className="w-4 h-4 text-[#16382B]" />
+                  <span>+ Upload Photo</span>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                </label>
+                <span className="text-[11px] text-slate-400 block mt-1">Supports JPG, PNG, WEBP files</span>
+              </div>
+
+              <div className="space-y-1">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Or select sample image:</span>
+                <div className="flex gap-2">
+                  {sampleServiceImages.map((img, idx) => (
+                    <img
+                      key={idx}
+                      src={img}
+                      alt={`Sample ${idx + 1}`}
+                      onClick={() => handleUpdateImage(img)}
+                      className={`w-10 h-10 rounded-lg object-cover cursor-pointer border ${formData.images[0] === img ? 'border-2 border-[#16382B]' : 'border-slate-200 hover:border-[#16382B]'}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Description with AI Improver */}
         <div>
           <div className="flex justify-between items-center mb-1">
@@ -254,20 +344,21 @@ export default function ServiceForm({ initialData = {}, onSubmit, loading, isEdi
       {showPreview && (
         <div className="card-editorial bg-[#FBF9F4] p-6 rounded-2xl border border-[#D2DDD5] space-y-3">
           <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Customer Card Preview</span>
-          <div className="flex justify-between items-start gap-4">
-            <div>
-              <span className="badge-sage text-xs mb-1">{formData.category}</span>
-              <h4 className="font-editorial text-xl font-bold text-[#16382B]">{formData.title || 'Service Title'}</h4>
+          <div className="flex gap-4">
+            <img src={formData.images[0]} alt="Preview" className="w-20 h-20 rounded-xl object-cover border" />
+            <div className="flex-1">
+              <div className="flex justify-between items-start gap-4">
+                <div>
+                  <span className="badge-sage text-xs mb-1">{formData.category}</span>
+                  <h4 className="font-editorial text-xl font-bold text-[#16382B]">{formData.title || 'Service Title'}</h4>
+                </div>
+                <div className="text-right">
+                  <span className="font-editorial text-xl font-bold text-[#16382B]">₹{formData.price || 0}</span>
+                  <span className="text-xs text-slate-500 block">/ {formData.priceType}</span>
+                </div>
+              </div>
+              <p className="text-sm text-slate-600 italic mt-1">"{formData.description || 'Description preview...'}"</p>
             </div>
-            <div className="text-right">
-              <span className="font-editorial text-xl font-bold text-[#16382B]">₹{formData.price || 0}</span>
-              <span className="text-xs text-slate-500 block">/ {formData.priceType}</span>
-            </div>
-          </div>
-          <p className="text-sm text-slate-600 italic">"{formData.description || 'Description preview...'}"</p>
-          <div className="flex items-center gap-4 text-xs font-semibold text-slate-500 pt-2 border-t border-[#E2E7E3]">
-            <span>📍 {formData.location?.city || 'Chennai'}</span>
-            <span>Available: {formData.availability?.days?.join(', ') || 'Weekends'}</span>
           </div>
         </div>
       )}

@@ -1,7 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
-import { LanguageProvider } from './contexts/LanguageContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -15,6 +14,7 @@ import ServiceFormPage from './pages/provider/ServiceFormPage';
 import ProductsListPage from './pages/provider/ProductsListPage';
 import ProductFormPage from './pages/provider/ProductFormPage';
 import ProviderLivelihoodDashboardPage from './pages/provider/ProviderLivelihoodDashboardPage';
+import MessagesPage from './pages/MessagesPage';
 
 // Phase 4 Public Discovery Pages
 import ExplorePage from './pages/ExplorePage';
@@ -22,7 +22,7 @@ import ServiceDetailPage from './pages/ServiceDetailPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import PublicProviderProfilePage from './pages/PublicProviderProfilePage';
 
-// Task 3 — Opportunities + Applications + Trust
+// Opportunities + Customer Request Hub + Applications + Reviews
 import OpportunitiesListPage from './pages/opportunities/OpportunitiesListPage';
 import OpportunityDetailPage from './pages/opportunities/OpportunityDetailPage';
 import OpportunityCreatePage from './pages/opportunities/OpportunityCreatePage';
@@ -36,7 +36,6 @@ import Chatbot from './components/chatbot/Chatbot';
 
 export default function App() {
   return (
-    <LanguageProvider>
     <AuthProvider>
       <Router>
         <div className="min-h-screen flex flex-col bg-[#FBF9F4] text-[#1F2421]">
@@ -62,6 +61,14 @@ export default function App() {
                 element={
                   <ProtectedRoute>
                     <DashboardPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/messages"
+                element={
+                  <ProtectedRoute>
+                    <MessagesPage />
                   </ProtectedRoute>
                 }
               />
@@ -148,7 +155,23 @@ export default function App() {
                 }
               />
 
-              {/* Customer ONLY Routes */}
+              {/* Customer ONLY Routes — Unified Request Hub */}
+              <Route
+                path="/requests"
+                element={
+                  <ProtectedRoute allowedRoles={['customer']}>
+                    <MyOpportunitiesPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/requests/create"
+                element={
+                  <ProtectedRoute allowedRoles={['customer']}>
+                    <OpportunityCreatePage />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/opportunities/create"
                 element={
@@ -179,11 +202,10 @@ export default function App() {
           </main>
           <Footer />
 
-          {/* Global SilverHands Assistant Floating Chatbot */}
+          {/* Global SilverHands Assistant / Copilot Floating Chatbot */}
           <Chatbot />
         </div>
       </Router>
     </AuthProvider>
-    </LanguageProvider>
   );
 }
