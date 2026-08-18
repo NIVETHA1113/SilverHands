@@ -72,11 +72,11 @@ async function geocodeCity(locationQuery) {
 }
 
 export default function LocationMapModal({ user, onClose }) {
-  const city    = user?.location?.city  || '';
-  const state   = user?.location?.state || '';
-  // Build display label purely from city + state — never use `address`
-  // because the model default for address is 'T. Nagar, Chennai' for all users
-  const displayLabel = [city, state].filter(Boolean).join(', ') || 'Your Location';
+  const city  = user?.location?.city || '';
+  // Do NOT use state in the label or geocode query — the model default is
+  // 'Tamil Nadu' for every user regardless of actual city, so it's unreliable.
+  // Use city only.
+  const displayLabel = city || 'Your Location';
 
   // Determine initial center from stored coords
   const storedLat = user?.location?.latitude;
@@ -104,8 +104,8 @@ export default function LocationMapModal({ user, onClose }) {
 
       // Coords are missing or are the Chennai default but city is elsewhere → geocode
       if (city) {
-        const query = state ? `${city}, ${state}, India` : `${city}, India`;
-        const coords = await geocodeCity(query);
+        // Geocode city + India only — never use stored state (model default is Tamil Nadu for all)
+        const coords = await geocodeCity(`${city}, India`);
         if (coords) {
           setCenter(coords);
           return;
