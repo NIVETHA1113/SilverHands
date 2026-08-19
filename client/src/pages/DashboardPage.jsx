@@ -95,7 +95,7 @@ export default function DashboardPage() {
         <div className="space-y-8">
           
           {/* Search Prompt Box */}
-          <div className="bg-white p-8 rounded-3xl border border-[#E2E7E3] space-y-4">
+          <div className="bg-white p-8 rounded-3xl border border-[#E2E7E3] space-y-5">
             <h2 className="font-editorial text-2xl sm:text-3xl font-bold text-[#16382B]">
               What service or product are you looking for today?
             </h2>
@@ -103,15 +103,16 @@ export default function DashboardPage() {
               Find trusted home cooks, language tutors, blouse tailors, and handmade crafts in {user?.location?.city || 'Chennai'}.
             </p>
 
-            <form onSubmit={handleCustomerSearch} className="flex flex-col sm:flex-row gap-3 pt-2">
+            <form onSubmit={handleCustomerSearch} className="flex flex-col sm:flex-row gap-4 pt-3">
               <div className="relative flex-1">
-                <Search className="w-5 h-5 text-slate-400 absolute left-4 top-4" />
+                <Search className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
                 <input
                   type="text"
                   placeholder="Search traditional skills, tutors, or homemade goods..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="input-editorial pl-12 pr-12"
+                  className="input-editorial"
+                  style={{ paddingLeft: '2.75rem', paddingRight: '3rem' }}
                 />
                 {micSupported && (
                   <button

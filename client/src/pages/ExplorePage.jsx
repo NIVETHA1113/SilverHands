@@ -483,17 +483,6 @@ export default function ExplorePage() {
               </p>
             </div>
 
-            {/* ── Language toggle ── */}
-            <button
-              type="button"
-              onClick={toggleLang}
-              aria-label={`Switch to ${t.altLabel}`}
-              title={`Switch to ${t.altLabel}`}
-              className="lang-toggle shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#D2DDD5] bg-white text-[#16382B] text-xs font-bold hover:border-[#16382B] hover:bg-[#F0F4F1] transition-all"
-            >
-              <Languages className="w-3.5 h-3.5" />
-              <span>{t.altLabel}</span>
-            </button>
           </div>
 
           {/* ── Search row ── */}
