@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { LanguageProvider } from './contexts/LanguageContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -36,8 +37,9 @@ import Chatbot from './components/chatbot/Chatbot';
 
 export default function App() {
   return (
-    <AuthProvider>
-      <Router>
+    <LanguageProvider>
+      <AuthProvider>
+        <Router>
         <div className="min-h-screen flex flex-col bg-[#FBF9F4] text-[#1F2421]">
           <Navbar />
           <main className="flex-1">
@@ -207,5 +209,6 @@ export default function App() {
         </div>
       </Router>
     </AuthProvider>
+    </LanguageProvider>
   );
 }

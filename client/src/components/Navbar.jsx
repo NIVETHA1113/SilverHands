@@ -1,10 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Sparkles, Menu, X, LogOut, Compass, Briefcase, Package, LayoutDashboard, FileText, ClipboardList, ChevronDown, MessageSquare, Award } from 'lucide-react';
+import { useExploreLocale } from '../locales/exploreLocales';
+import { Sparkles, Menu, X, LogOut, Compass, Briefcase, Package, LayoutDashboard, FileText, ClipboardList, ChevronDown, MessageSquare, Award, Languages } from 'lucide-react';
 
 export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
+  const { t, lang, setLang } = useExploreLocale();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -18,6 +20,8 @@ export default function Navbar() {
     setMobileMenuOpen(false);
     setMoreDropdownOpen(false);
   };
+
+  const toggleLang = () => setLang(l => l === 'en' ? 'ta' : 'en');
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -62,7 +66,7 @@ export default function Navbar() {
                   className={`flex items-center gap-1.5 transition-colors ${location.pathname.startsWith('/explore') ? 'text-[#16382B] font-bold' : 'hover:text-[#16382B]'}`}
                 >
                   <Compass className="w-4 h-4 text-[#16382B]" />
-                  <span>Explore</span>
+                  <span>{t.navExplore}</span>
                 </Link>
 
                 {/* PROVIDER PRIMARY NAV */}
@@ -73,7 +77,7 @@ export default function Navbar() {
                       className={`flex items-center gap-1.5 transition-colors ${location.pathname === '/opportunities' ? 'text-[#16382B] font-bold' : 'hover:text-[#16382B]'}`}
                     >
                       <FileText className="w-4 h-4" />
-                      <span>Opportunities</span>
+                      <span>{t.navOpportunities}</span>
                     </Link>
 
                     <Link
@@ -81,7 +85,7 @@ export default function Navbar() {
                       className={`flex items-center gap-1.5 transition-colors ${location.pathname === '/provider/dashboard' || location.pathname === '/dashboard' ? 'text-[#16382B] font-bold' : 'hover:text-[#16382B]'}`}
                     >
                       <LayoutDashboard className="w-4 h-4" />
-                      <span>Dashboard</span>
+                      <span>{t.navDashboard}</span>
                     </Link>
                   </>
                 )}
@@ -94,7 +98,7 @@ export default function Navbar() {
                       className={`flex items-center gap-1.5 transition-colors ${location.pathname.startsWith('/requests') || location.pathname.startsWith('/opportunities/my') || location.pathname.startsWith('/opportunities/create') ? 'text-[#16382B] font-bold' : 'hover:text-[#16382B]'}`}
                     >
                       <ClipboardList className="w-4 h-4 text-[#C86D51]" />
-                      <span>Requests</span>
+                      <span>{t.navMyOpportunities}</span>
                     </Link>
 
                     <Link
@@ -102,7 +106,7 @@ export default function Navbar() {
                       className={`flex items-center gap-1.5 transition-colors ${location.pathname === '/dashboard' ? 'text-[#16382B] font-bold' : 'hover:text-[#16382B]'}`}
                     >
                       <LayoutDashboard className="w-4 h-4" />
-                      <span>Dashboard</span>
+                      <span>{t.navDashboard}</span>
                     </Link>
                   </>
                 )}
@@ -127,7 +131,7 @@ export default function Navbar() {
                             className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-[#FBF9F4] hover:text-[#16382B]"
                           >
                             <Briefcase className="w-4 h-4 text-emerald-700" />
-                            <span>My Services</span>
+                            <span>{t.navMyServices}</span>
                           </Link>
                           <Link
                             to="/provider/products"
@@ -135,7 +139,7 @@ export default function Navbar() {
                             className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-[#FBF9F4] hover:text-[#16382B]"
                           >
                             <Package className="w-4 h-4 text-amber-700" />
-                            <span>My Products</span>
+                            <span>{t.navMyProducts}</span>
                           </Link>
                           <Link
                             to="/applications/my"
@@ -143,7 +147,7 @@ export default function Navbar() {
                             className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-[#FBF9F4] hover:text-[#16382B]"
                           >
                             <FileText className="w-4 h-4 text-blue-700" />
-                            <span>My Applications</span>
+                            <span>{t.navMyApplications}</span>
                           </Link>
                           <Link
                             to="/provider/dashboard"
@@ -180,6 +184,18 @@ export default function Navbar() {
                   )}
                 </div>
 
+                {/* LANGUAGE TOGGLE */}
+                <button
+                  type="button"
+                  onClick={toggleLang}
+                  aria-label={`Switch to ${t.altLabel}`}
+                  title={`Switch to ${t.altLabel}`}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#E2E7E3] text-xs font-semibold text-slate-600 hover:bg-[#FBF9F4] hover:text-[#16382B] hover:border-[#16382B] transition-all cursor-pointer"
+                >
+                  <Languages className="w-3.5 h-3.5" />
+                  <span>{t.altLabel}</span>
+                </button>
+
                 {/* USER PROFILE & LOGOUT */}
                 <div className="flex items-center gap-3 pl-4 border-l border-[#E2E7E3]">
                   <Link to="/dashboard" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
@@ -191,7 +207,7 @@ export default function Navbar() {
                     <div className="text-left text-xs">
                       <span className="font-bold text-[#16382B] block">{user?.name}</span>
                       <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
-                        {isProvider ? 'Skill Provider' : 'Customer'}
+                        {isProvider ? t.navRoleProvider : t.navRoleCustomer}
                       </span>
                     </div>
                   </Link>
@@ -199,7 +215,7 @@ export default function Navbar() {
                   <button
                     onClick={handleLogout}
                     className="p-2 text-slate-400 hover:text-red-700 rounded-xl transition-colors cursor-pointer"
-                    title="Logout"
+                    title={t.navLogOut}
                   >
                     <LogOut className="w-4 h-4" />
                   </button>
@@ -207,11 +223,22 @@ export default function Navbar() {
               </>
             ) : (
               <div className="flex items-center gap-3">
+                {/* LANGUAGE TOGGLE (unauthenticated) */}
+                <button
+                  type="button"
+                  onClick={toggleLang}
+                  aria-label={`Switch to ${t.altLabel}`}
+                  title={`Switch to ${t.altLabel}`}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#E2E7E3] text-xs font-semibold text-slate-600 hover:bg-[#FBF9F4] hover:text-[#16382B] hover:border-[#16382B] transition-all cursor-pointer"
+                >
+                  <Languages className="w-3.5 h-3.5" />
+                  <span>{t.altLabel}</span>
+                </button>
                 <Link to="/login" className="btn-secondary text-xs py-2 px-4">
-                  Log In
+                  {t.navLogIn}
                 </Link>
                 <Link to="/register" className="btn-primary text-xs py-2 px-4 shadow-xs">
-                  Join SilverHands
+                  {t.navJoin}
                 </Link>
               </div>
             )}
@@ -231,39 +258,60 @@ export default function Navbar() {
       {mobileMenuOpen && (
         <div className="md:hidden bg-white border-b border-[#E2E7E3] px-4 pt-2 pb-6 space-y-3">
           {isAuthenticated && (
-            <Link to="/explore" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-[#16382B]">🔍 Explore Marketplace</Link>
+            <Link to="/explore" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-[#16382B]">
+              🔍 {t.navExploreMarketplace}
+            </Link>
           )}
 
           {isAuthenticated ? (
             <>
               {isProvider ? (
                 <>
-                  <Link to="/opportunities" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">Browse Opportunities</Link>
-                  <Link to="/provider/dashboard" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">Dashboard</Link>
-                  <Link to="/provider/services" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">My Services</Link>
-                  <Link to="/provider/products" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">My Products</Link>
-                  <Link to="/applications/my" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">My Applications</Link>
+                  <Link to="/opportunities" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">{t.navBrowseOpportunities}</Link>
+                  <Link to="/provider/dashboard" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">{t.navDashboard}</Link>
+                  <Link to="/provider/services" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">{t.navMyServices}</Link>
+                  <Link to="/provider/products" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">{t.navMyProducts}</Link>
+                  <Link to="/applications/my" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">{t.navMyApplications}</Link>
                   <Link to="/messages" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">Messages</Link>
                 </>
               ) : (
                 <>
-                  <Link to="/requests" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-[#C86D51]">📋 Requests Hub</Link>
-                  <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">Dashboard</Link>
+                  <Link to="/requests" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-[#C86D51]">📋 {t.navMyOpportunities}</Link>
+                  <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">{t.navDashboard}</Link>
                   <Link to="/messages" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-slate-700">Messages</Link>
                 </>
               )}
+
+              {/* Mobile language toggle */}
+              <button
+                type="button"
+                onClick={() => { toggleLang(); setMobileMenuOpen(false); }}
+                className="flex items-center gap-2 py-2 text-sm font-semibold text-slate-700"
+              >
+                <Languages className="w-4 h-4" />
+                <span>{t.altLabel}</span>
+              </button>
 
               <button
                 onClick={handleLogout}
                 className="w-full text-left py-2 text-sm font-semibold text-red-700 pt-2 border-t border-[#E2E7E3]"
               >
-                Log Out
+                {t.navLogOut}
               </button>
             </>
           ) : (
             <div className="space-y-2 pt-2 border-t border-[#E2E7E3]">
-              <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="block btn-secondary text-center py-2 text-xs">Log In</Link>
-              <Link to="/register" onClick={() => setMobileMenuOpen(false)} className="block btn-primary text-center py-2 text-xs">Join SilverHands</Link>
+              {/* Mobile language toggle (unauthenticated) */}
+              <button
+                type="button"
+                onClick={() => { toggleLang(); setMobileMenuOpen(false); }}
+                className="flex items-center gap-2 py-2 text-sm font-semibold text-slate-700"
+              >
+                <Languages className="w-4 h-4" />
+                <span>{t.altLabel}</span>
+              </button>
+              <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="block btn-secondary text-center py-2 text-xs">{t.navLogIn}</Link>
+              <Link to="/register" onClick={() => setMobileMenuOpen(false)} className="block btn-primary text-center py-2 text-xs">{t.navJoin}</Link>
             </div>
           )}
         </div>
