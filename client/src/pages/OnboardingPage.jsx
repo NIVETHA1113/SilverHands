@@ -9,25 +9,28 @@ import StepLocation from '../components/onboarding/StepLocation';
 import StepLanguages from '../components/onboarding/StepLanguages';
 import StepPreferences from '../components/onboarding/StepPreferences';
 import StepReview from '../components/onboarding/StepReview';
-import { CheckCircle2, Sparkles, ArrowRight, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, ArrowRight } from 'lucide-react';
 
 export default function OnboardingPage() {
-  const { user, login } = useAuth();
+  const { user, updateUser } = useAuth();
   const navigate = useNavigate();
 
   const [currentStep, setCurrentStep] = useState(user?.onboarding?.currentStep || 1);
   const [profileData, setProfileData] = useState({
-    name: user?.name || '',
-    age: user?.age || 58,
-    phone: user?.phone || '',
-    profileImage: user?.profileImage || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=250',
-    bio: user?.bio || '',
-    skills: user?.skills || [],
-    location: user?.location || { city: 'Chennai', state: 'Tamil Nadu', country: 'India', address: 'T. Nagar, Chennai' },
-    languages: user?.languages || ['English', 'Tamil'],
+    name:            user?.name            || '',
+    age:             user?.age             || 58,
+    phone:           user?.phone           || '',
+    profileImage:    user?.profileImage    || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=250',
+    bio:             user?.bio             || '',
+    skills:          user?.skills          || [],
+    location:        user?.location        || { city: '', state: '', country: 'India', address: '', latitude: null, longitude: null },
+    languages:       user?.languages       || ['English', 'Tamil'],
     workPreferences: user?.workPreferences || ['Home-based'],
-    interestedIn: user?.interestedIn || ['Services', 'Flexible Work'],
-    availability: user?.availability || { days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], timePreferences: ['Flexible'] }
+    interestedIn:    user?.interestedIn    || ['Services', 'Flexible Work'],
+    availability:    user?.availability    || {
+      days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+      timePreferences: ['Flexible']
+    }
   });
 
   const [isCompleted, setIsCompleted] = useState(user?.onboarding?.completed || false);
@@ -49,15 +52,36 @@ export default function OnboardingPage() {
       const uId = user._id || user.id;
       try {
         setLoading(true);
-        // Update Profile
-        await api.put(`/users/${uId}/profile`, merged);
-        // Update Onboarding status & currentStep
+
+        // Save profile to DB
+        const profileRes = await api.put(`/users/${uId}/profile`, merged);
+
+        // Update onboarding step/status
         await api.put(`/users/${uId}/onboarding`, {
           completed: markCompleted,
           currentStep: nextStep
         });
+
+        // --- KEY FIX: push saved data back into AuthContext so the rest
+        // of the app (Dashboard, LocationMapModal, Navbar) sees fresh data
+        // without requiring a page reload.
+        if (profileRes.data?.user) {
+          // Prefer the server's canonical response
+          updateUser(profileRes.data.user);
+        } else {
+          // Fall back to merging what we sent
+          updateUser({
+            ...merged,
+            onboarding: { completed: markCompleted, currentStep: nextStep }
+          });
+        }
       } catch (err) {
         console.error('[Autosave Error]:', err.message);
+        // Still update context optimistically so UX isn't broken
+        updateUser({
+          ...merged,
+          onboarding: { completed: markCompleted, currentStep: nextStep }
+        });
       } finally {
         setLoading(false);
       }
@@ -86,7 +110,7 @@ export default function OnboardingPage() {
   return (
     <div className="min-h-screen bg-[#FBF9F4] py-10 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto space-y-6">
-        
+
         {/* COMPLETED CELEBRATION VIEW */}
         {isCompleted ? (
           <div className="bg-white p-8 sm:p-12 rounded-3xl border border-[#E2E7E3] shadow-md text-center space-y-6 max-w-2xl mx-auto my-8">
@@ -106,7 +130,6 @@ export default function OnboardingPage() {
               </p>
             </div>
 
-            {/* Completion Percentage Badge */}
             <div className="bg-[#FBF9F4] p-4 rounded-2xl border border-[#E2E7E3] inline-block px-8">
               <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Profile Completion</p>
               <p className="font-editorial text-3xl font-bold text-[#16382B] mt-0.5">100%</p>

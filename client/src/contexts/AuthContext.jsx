@@ -61,6 +61,33 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  /**
+   * Merge updated fields into the in-memory user object.
+   * Call this after any profile/onboarding save so the rest of the
+   * app (Dashboard, Navbar, LocationMapModal, etc.) sees fresh data
+   * without requiring a full page reload.
+   *
+   * @param {Object} updatedFields - Partial user fields to merge (e.g. { location: {...} })
+   */
+  const updateUser = (updatedFields) => {
+    setUser(prev => prev ? { ...prev, ...updatedFields } : prev);
+  };
+
+  /**
+   * Re-fetch the full user from the server and replace the in-memory user.
+   * Use this when you need to guarantee the context is in sync with the DB.
+   */
+  const refreshUser = async () => {
+    try {
+      const res = await api.get('/auth/me');
+      if (res.data.success) {
+        setUser(res.data.user);
+      }
+    } catch (err) {
+      console.error('[Auth] refreshUser failed:', err.message);
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -70,6 +97,8 @@ export const AuthProvider = ({ children }) => {
         login,
         register,
         logout,
+        updateUser,
+        refreshUser,
         isAuthenticated: !!user
       }}
     >

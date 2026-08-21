@@ -1,17 +1,46 @@
 import React, { useState } from 'react';
-import { MapPin, Navigation, ArrowRight, ArrowLeft, AlertCircle } from 'lucide-react';
+import { MapPin, Navigation, ArrowRight, ArrowLeft, AlertCircle, Loader2 } from 'lucide-react';
+
+// Reverse-geocode coords → { city, state, address } via OSM Nominatim (free, no key)
+async function reverseGeocode(lat, lng) {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
+      { headers: { 'Accept-Language': 'en' } }
+    );
+    const data = await res.json();
+    if (!data || data.error) return null;
+
+    const addr = data.address || {};
+    // city: try city → town → village → county in order
+    const city =
+      addr.city || addr.town || addr.village || addr.county || addr.state_district || '';
+    const state   = addr.state || '';
+    const country = addr.country || 'India';
+    // Build a readable short address: neighbourhood / suburb / district
+    const locality =
+      addr.neighbourhood || addr.suburb || addr.city_district || addr.district || '';
+    const address = locality ? `${locality}, ${city}` : city;
+
+    return { city, state, country, address };
+  } catch (e) {
+    console.error('[StepLocation] Reverse geocode failed:', e.message);
+    return null;
+  }
+}
 
 export default function StepLocation({ data, onNext, onBack }) {
   const [formData, setFormData] = useState({
-    city: data.location?.city || 'Chennai',
-    state: data.location?.state || 'Tamil Nadu',
-    country: data.location?.country || 'India',
-    address: data.location?.address || 'T. Nagar, Chennai',
-    latitude: data.location?.latitude || 13.0827,
-    longitude: data.location?.longitude || 80.2707
+    city:      data.location?.city      || '',
+    state:     data.location?.state     || '',
+    country:   data.location?.country   || 'India',
+    address:   data.location?.address   || '',
+    latitude:  data.location?.latitude  ?? null,
+    longitude: data.location?.longitude ?? null,
   });
 
   const [geoStatus, setGeoStatus] = useState('');
+  const [geoLoading, setGeoLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleChange = (e) => {
@@ -25,29 +54,56 @@ export default function StepLocation({ data, onNext, onBack }) {
       return;
     }
 
-    setGeoStatus('Locating your position...');
+    setGeoLoading(true);
+    setGeoStatus('Locating your position…');
+
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setFormData({
-          ...formData,
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude
-        });
-        setGeoStatus('Current coordinates captured successfully! ✓');
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+
+        // Update coords immediately so user sees feedback fast
+        setFormData(prev => ({ ...prev, latitude, longitude }));
+        setGeoStatus('Coordinates captured. Looking up your city…');
+
+        // Reverse-geocode to fill city / state / address
+        const place = await reverseGeocode(latitude, longitude);
+
+        if (place) {
+          setFormData(prev => ({
+            ...prev,
+            latitude,
+            longitude,
+            city:    place.city    || prev.city,
+            state:   place.state   || prev.state,
+            country: place.country || prev.country,
+            address: place.address || prev.address,
+          }));
+          setGeoStatus(`Location detected: ${place.city}${place.state ? ', ' + place.state : ''} ✓`);
+        } else {
+          setGeoStatus('Coordinates captured. Could not detect city — please fill it in manually.');
+        }
+
+        setGeoLoading(false);
       },
       (err) => {
-        setGeoStatus('Location permission denied or unavailable. You can enter your city manually.');
-      }
+        const messages = {
+          1: 'Location permission denied. Please enter your city manually.',
+          2: 'Location unavailable. Please enter your city manually.',
+          3: 'Location request timed out. Please enter your city manually.',
+        };
+        setGeoStatus(messages[err.code] || 'Location unavailable. Please enter your city manually.');
+        setGeoLoading(false);
+      },
+      { timeout: 10000, maximumAge: 60000 }
     );
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.city.trim()) {
-      setError('Please tell us your city so local customers can find you.');
+      setError('Please enter your city so local customers can find you.');
       return;
     }
-
     onNext({ location: formData });
   };
 
@@ -74,22 +130,32 @@ export default function StepLocation({ data, onNext, onBack }) {
         <div className="flex items-center gap-3">
           <MapPin className="w-6 h-6 text-[#16382B] shrink-0" />
           <div>
-            <p className="text-sm font-bold text-[#16382B]">Automatic Location Discovery</p>
-            <p className="text-xs text-slate-600">Optionally capture your GPS coordinates for local matching.</p>
+            <p className="text-sm font-bold text-[#16382B]">Automatic Location Detection</p>
+            <p className="text-xs text-slate-600">
+              Detects your GPS position and fills in your city automatically.
+            </p>
           </div>
         </div>
         <button
           type="button"
           onClick={handleUseCurrentLocation}
-          className="btn-secondary text-xs py-2.5 px-4 bg-white text-[#16382B] shrink-0"
+          disabled={geoLoading}
+          className="btn-secondary text-xs py-2.5 px-4 bg-white text-[#16382B] shrink-0 disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          <Navigation className="w-4 h-4 text-[#16382B]" />
-          <span>Use my current location</span>
+          {geoLoading
+            ? <Loader2 className="w-4 h-4 text-[#16382B] animate-spin" />
+            : <Navigation className="w-4 h-4 text-[#16382B]" />
+          }
+          <span>{geoLoading ? 'Detecting…' : 'Use my current location'}</span>
         </button>
       </div>
 
       {geoStatus && (
-        <p className="text-xs font-semibold text-[#16382B] bg-white p-3 rounded-xl border border-[#E2E7E3]">
+        <p className={`text-xs font-semibold p-3 rounded-xl border ${
+          geoStatus.includes('✓')
+            ? 'text-[#16382B] bg-[#E6ECE7] border-[#D2DDD5]'
+            : 'text-slate-600 bg-white border-[#E2E7E3]'
+        }`}>
           {geoStatus}
         </p>
       )}
@@ -98,14 +164,14 @@ export default function StepLocation({ data, onNext, onBack }) {
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-semibold text-[#16382B] mb-1" htmlFor="city">
-            City / Town *
+            City / Town <span className="text-red-500">*</span>
           </label>
           <input
             id="city"
             type="text"
             name="city"
             required
-            placeholder="e.g. Chennai"
+            placeholder="e.g. Chennai, Coimbatore, Madurai…"
             value={formData.city}
             onChange={handleChange}
             className="input-editorial"
@@ -114,7 +180,7 @@ export default function StepLocation({ data, onNext, onBack }) {
 
         <div>
           <label className="block text-sm font-semibold text-[#16382B] mb-1" htmlFor="address">
-            Locality / Neighborhood Address
+            Locality / Neighbourhood
           </label>
           <input
             id="address"
@@ -136,7 +202,7 @@ export default function StepLocation({ data, onNext, onBack }) {
               id="state"
               type="text"
               name="state"
-              placeholder="Tamil Nadu"
+              placeholder="e.g. Tamil Nadu"
               value={formData.state}
               onChange={handleChange}
               className="input-editorial"
@@ -157,6 +223,13 @@ export default function StepLocation({ data, onNext, onBack }) {
             />
           </div>
         </div>
+
+        {/* Show captured coords as subtle confirmation */}
+        {formData.latitude != null && formData.longitude != null && (
+          <p className="text-[11px] text-slate-400 font-mono">
+            📍 {formData.latitude.toFixed(5)}, {formData.longitude.toFixed(5)}
+          </p>
+        )}
       </div>
 
       {/* Navigation Controls */}
